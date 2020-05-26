@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>moontalk</title>
-    <link>https://blog.moontalk.top/</link>
-    <description>Recent content on moontalk</description>
+    <title>Posts on moontalk</title>
+    <link>https://blog.moontalk.top/post/</link>
+    <description>Recent content in Posts on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <lastBuildDate>Sun, 24 May 2020 21:19:54 +0800</lastBuildDate>
     
-	<atom:link href="https://blog.moontalk.top/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://blog.moontalk.top/post/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>

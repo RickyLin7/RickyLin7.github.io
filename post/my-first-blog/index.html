@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>LVS-TUN模式集群在开启防火墙情况下的一次调试之旅 - moontalk</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="RickyLin7" /><meta name="description" content="一、集群说明 OS: CentOS7.2 DS(LVS): 10.1.61.114 LVS-MODE: TUN VIP: 10.1.61.82 RS1(Nginx): 10.1.62.105 RS2(Nginx): 10.1.62.106 PORT: 80 防火墙: DS、RS1、RS2均安装 firewalld，且开放80端口（tcp，udp） 二、预备知识 firewalld" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.59.1 with theme even" />
+
+
+<link rel="canonical" href="https://blog.moontalk.top/post/my-first-blog/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.c5c7c6e13305371a90e1e1d9469de50ab9055253f722c6719157747c6532bb01.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="LVS-TUN模式集群在开启防火墙情况下的一次调试之旅" />
+<meta property="og:description" content="一、集群说明 OS: CentOS7.2 DS(LVS): 10.1.61.114 LVS-MODE: TUN VIP: 10.1.61.82 RS1(Nginx): 10.1.62.105 RS2(Nginx): 10.1.62.106 PORT: 80 防火墙: DS、RS1、RS2均安装 firewalld，且开放80端口（tcp，udp） 二、预备知识 firewalld" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.moontalk.top/post/my-first-blog/" />
+<meta property="article:published_time" content="2020-05-24T21:19:54+08:00" />
+<meta property="article:modified_time" content="2020-05-24T21:19:54+08:00" />
+<meta itemprop="name" content="LVS-TUN模式集群在开启防火墙情况下的一次调试之旅">
+<meta itemprop="description" content="一、集群说明 OS: CentOS7.2 DS(LVS): 10.1.61.114 LVS-MODE: TUN VIP: 10.1.61.82 RS1(Nginx): 10.1.62.105 RS2(Nginx): 10.1.62.106 PORT: 80 防火墙: DS、RS1、RS2均安装 firewalld，且开放80端口（tcp，udp） 二、预备知识 firewalld">
+
+
+<meta itemprop="datePublished" content="2020-05-24T21:19:54&#43;08:00" />
+<meta itemprop="dateModified" content="2020-05-24T21:19:54&#43;08:00" />
+<meta itemprop="wordCount" content="2968">
+
+
+
+<meta itemprop="keywords" content="LVS," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="LVS-TUN模式集群在开启防火墙情况下的一次调试之旅"/>
+<meta name="twitter:description" content="一、集群说明 OS: CentOS7.2 DS(LVS): 10.1.61.114 LVS-MODE: TUN VIP: 10.1.61.82 RS1(Nginx): 10.1.62.105 RS2(Nginx): 10.1.62.106 PORT: 80 防火墙: DS、RS1、RS2均安装 firewalld，且开放80端口（tcp，udp） 二、预备知识 firewalld"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">MoonTalk</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">MoonTalk</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">LVS-TUN模式集群在开启防火墙情况下的一次调试之旅</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-05-24 </span>
+        
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> times read </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">Contents</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#一-集群说明">一、集群说明</a></li>
+<li><a href="#二-预备知识">二、预备知识</a></li>
+<li><a href="#三-问题描述">三、问题描述</a></li>
+<li><a href="#四-排查流程">四、排查流程</a></li>
+<li><a href="#五-回顾总结">五、回顾总结</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h3 id="一-集群说明">一、集群说明</h3>
+
+<ul>
+<li><strong>OS:</strong> CentOS7.2</li>
+<li><strong>DS(LVS):</strong> 10.1.61.114</li>
+<li><strong>LVS-MODE:</strong> TUN</li>
+<li><strong>VIP:</strong> 10.1.61.82</li>
+<li><strong>RS1(Nginx):</strong> 10.1.62.105</li>
+<li><strong>RS2(Nginx):</strong> 10.1.62.106</li>
+<li><strong>PORT:</strong> 80</li>
+<li><strong>防火墙:</strong> DS、RS1、RS2均安装 firewalld，且开放80端口（tcp，udp）</li>
+</ul>
+
+<h3 id="二-预备知识">二、预备知识</h3>
+
+<ol>
+<li><p>firewalld 是 iptables 的前端控制器，用于实现持久的网络流量规则。</p></li>
+
+<li><p>firewalld 自身并不具备防火墙的功能，而是和 iptables 一样需要通过内核的 netfilter 来实现，也就是说 firewalld 和 iptables 一样，他们的作用都是用于维护规则，而真正使用规则干活的是内核的 netfilter，只不过 firewalld 和 iptables 的结构以及使用方法不一样罢了。</p></li>
+
+<li><p>netfilter 有五链四表，说明如下。
+五链：</p>
+
+<ul>
+<li>PREROUTING：数据包进入路由表之前</li>
+<li>INPUT：通过路由表后目的地为本机</li>
+<li>FORWARD：通过路由表后，目的地不为本机</li>
+<li>OUTPUT：由本机产生，向外转发</li>
+<li>POSTROUTIONG：发送到网卡接口之前。</li>
+</ul>
+
+<p>四表：</p>
+
+<ul>
+<li>filter表，负责过滤数据包，也就是防火墙实现&rdquo;防火&rdquo;的功能，iptables命令中如果没有指定 -t，即默认为此表。filter表中只有OUTPUT/FORWARD/INPUT链。</li>
+<li>nat表，实现网络地址转换的表。可以转换源地址、源端口、目标地址、目标端口。NAT表中的链是PREROUTING/POSTROUTING/OUTPUT。</li>
+<li>mangle表，拆解报文，做出修改，并重新封装。mangle表中包含所有的链。</li>
+<li>raw表，加速数据包穿过防火墙的表。只有PREROUTING/OUTPUT表。</li>
+</ul></li>
+
+<li><p>四个表的优先级由高到低的顺序为：<strong>raw → mangle → nat → filter</strong>，比如说 PRROUTING 链上，即有 mangle 表，也有 nat 表，那么先由 mangle 处理，然后由 nat 表处理。</p></li>
+
+<li><p>Linux 上的防火墙是由 netfilter 实现的，但是 netfilter 的功能不仅仅只有“防火”，一般可以认为“防火”的功能只是 filter 表的功能。</p></li>
+</ol>
+
+<p><strong>了解上述知识后，我们可以把数据包通过防火墙的流程总结为下图。</strong>
+ <center>
+    <img style="border-radius: 0.3125em;
+    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
+    src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1a7b32f89?imageView2/0/w/1280/h/960/format/webp/ignore-error/1">
+    <br></br>
+    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
+    display: inline-block;
+    color: #999;
+    padding: 2px;">特此说明：图片借用自朱双印博客，这位大佬的博客里有一套 iptables 系列教程，想学习详细知识的可以直接去他博客看，链接：www.zsythink.net</div>
+ </center></p>
+
+<h3 id="三-问题描述">三、问题描述</h3>
+
+<p>集群部署完成后，访问 VIP:PORT 遭到拒绝（Connection refused）。
+<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1a93821c6?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>直接访问 RS1:PORT 和 RS2:PORT 均可以正常访问 Nginx 服务（由于我未写入index.html，所以返回404页面是正常现象）。
+<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1ab5e9567?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<h3 id="四-排查流程">四、排查流程</h3>
+
+<p><strong>①</strong> 关闭 DS 防火墙，未解决问题。恢复开启 DS 防火墙后，再尝试关闭 RS1 防火墙，RS1 服务正常返回，RS2 依旧是连接拒绝。
+<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1accb53f2?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>猜测 <strong>Client → DS</strong> 这条链路是正常的，问题出现在 <strong>DS → RS</strong> 这条链路上。</p>
+
+<p><strong>②</strong> 恢复开启 RS1 的防火墙，登陆至 DS 机器上，使用命令<code>ipvsadm -L -n</code>查看连接状态来验证猜想。</p>
+
+<blockquote>
+<p>ipvsadm -L -n 命令结果小科普：
+对于 TCP 协议而言，ActiveConn 列是活动连接数，也就是tcp连接状态的 ESTABLISHED ，而 InActConn 列是指除了 ESTABLISHED 以外的，所有的其它状态的 tcp 连接。</p>
+</blockquote>
+
+<p>当前 InActConn 和 ActiveConn 均为0。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1ad8bd728?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>在 Client 端继续使用命令<code>for i in {1..100}; do curl 10.1.61.82:80; sleep 0.5; done</code>循环请求 VIP:PORT，然后在 DS 上使用命令<code>ipvsadm -L -n</code>再次查看连接状态。发现 InActConn 数值发生了改变，说明 DS 是收到了 Client 端的数据包的，ActiveConn 为0是因为 <strong>DS → RS</strong> 被拒，所以 tcp 连接未能建立。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1ae1b1e58?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>目前已定位到数据包出现问题的链路是在 <strong>DS → RS</strong> ，OK，那就抓个包看看呗。</p>
+
+<p><strong>③</strong> 在DS上使用命令<code>tcpdump -i any host 10.1.62.105</code>截获 RS1 收到和发出的所有数据包（在 Client 依然用老方法循环请求 VIP:PORT ），可以看到 DS 发给 RS1 的数据包被 RS1 用一个协议为 ICMP 的数据包拒绝了。等等，这个数据包的内容咋这么眼熟（ICMP host prohibited），好像用 iptables 查看规则时见过。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1d7ef9654?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p><strong>④</strong> 我马上登陆到RS1，直接用命令<code>iptables --line -vnL INPUT</code>查看 INPUT 链中的规则（<code>--line</code>可显示规则的编号，数据包在链中是顺着规则编号往下逐步匹配的；<code>-v</code>显示详细信息；<code>-n</code>不解析IP地址；<code>-L</code>指定链名；不指定<code>-t</code>默认显示 filter 表）。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1d88c895b?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>可以看到第七条 REJECT 规则就是用 icmp-host-prohibited 作为数据包内容拒绝的。啊哈？DS 发给 RS1 的数据包被最后一条规则匹配到了？为什么没被前面的规则处理掉？我不是开启了80端口吗？</p>
+
+<p><strong>⑤</strong> 虽然一堆疑问，不过还是先确认下 DS 发给 RS1 的数据包是不是真被第七条规则匹配处理了。这里我采用的方法是，在 Client 端循环请求 VIP:PORT 的前后分别用命令<code>iptables --line -vnL INPUT</code>查看第七条规则的 pkts（该规则匹配到的数据包数量）数值是否发生了变化，果然 pkts 发生了增长，说明数据包真的是被第七条规则匹配到并且 REJECT 掉了。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1d9591b05?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>额，我用命令<code>iptables --line -vnL</code>查看了所有 Chain(链) 的规则，找到我开放80端口的那两条规则又确认了一下，发现 dport 是80，协议为 tcp 的那条规则 pkts 一直是0，并没有变化（这条规则在 INPUT 链中是被第五条规则匹配的，规则虽然是在 IN_public_allow 链的，但了解过 iptables 自定义链相关知识后，就会明白这实际上是一个调用链的关系：<strong>INPUT_ZONES → IN_public → IN_public_allow</strong>，从下图的每个 Chain 的 target 也能看出来）。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1da0f129e?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>再次确认下，这条规则源地址、目标地址、端口、协议等等都没有问题，而且最开始我也直接访问 RS1:PORT 确认过 Nginx 服务是没有问题的，可以正常返回，所以我怀疑从 <strong>DS → RS1</strong> 的数据包并不是一个 tcp 包，所以没有被此规则匹配并处理。</p>
+
+<p><strong>⑥</strong> 然后又返回去查了下 LVS-TUN 模式的数据包处理流程。
+&gt; ipvs 工作在 INPUT 链，它在原有的 IP 报文外再次封装多一层 IP 头，内部 IP 头 (源地址为 CIP，目标 IP 为 VIP)，外层 IP 头 (源地址为 DIP，目标 IP 为 RIP)，然后将封装好的数据包从 DS 发往 RS 。</p>
+
+<p>到这，我已经恍然大悟了，它确实不是一个 tcp 包，再翻到之前从 DS 上抓取 RS1 的数据包内容，可以看到 <strong>DS → RS1</strong> 的数据包协议为 ipip-proto-4。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1ddf0eb32?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p><strong>⑦</strong> 所以，处理方法也很明确了，放行这个 ipip 协议的数据包。我的处理方法是在 RS1 上使用命令<code>iptables -t filter -I INPUT -p ipv4 -j ACCEPT</code>增加一条对所有协议类型为 ipip 的数据包ACCEPT的规则（这里的 prot 显示的 4 代表 ipv4 的协议号，想要查看协议名与协议号的对应关系可以在这里查找 <a href="https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml">Protocol Numbers</a>）。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d1e022b8f3?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>记住一定要在 INPUT 链第七条之前，我这里是直接插入到了第一条，我之前看一篇博文上用的是<code>-A INPUT</code>，这表示 append(追加) 一条规则，会出现在最后，这样设置的规则数据包根本就匹配不到，因为它已经被在你前面的那条REJECT规则匹配并拒绝掉了。</p>
+
+<p><strong>⑧</strong> 最后我们再从 Client 端请求验证一下规则是否生效，可以看到 RS1 已经正常返回了，且 RS1 上的第一条规则 pkts 也发生了增长，说明数据包已被匹配且正确处理。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d203226a67?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" />
+<br></br>
+<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d20fbf6adb?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<p>RS2 也设置相同的过滤规则，然后再次验证，两台 RS 均正常返回，over。<img src="https://user-gold-cdn.xitu.io/2019/12/16/16f0e2d206068d85?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="" /></p>
+
+<h3 id="五-回顾总结">五、回顾总结</h3>
+
+<ol>
+<li><p>很多搭建 LVS 集群的文章都会前置声明关闭防火墙或者使用<code>iptables -F</code>命令将 iptables 规则清空，以免发生通信问题。实际上大多数情况下你确实可以这样做，但是万一生产环境就要开防火墙呢，万一设置的某几条 iptables 规则非常重要，你啪一条命令给人全清了，是不是得写个事故报告。</p></li>
+
+<li><p>我的排查流程真的是像文章中一样如此顺利吗？其实并不是，因为这个问题出现时，我既不清楚 iptables 相关知识（一两年前简单的看过，然后忘光了），也不清楚 ipvs 的工作原理，就是拿来主义，所以刚开始排查的时候和无头苍蝇一样，一顿瞎比操作，后来还是滚回去补了 iptables 和 ipvs 的相关知识。所以其实排查流程中的第4步开始都已经是第二天的事了。</p></li>
+
+<li><p>如果懂了 iptables 相关知识（五链四表、规则管理、匹配条件、扩展模块、自定义链等等）。清楚命令及命令结果中每个参数的意思非常重要，像遇到此类防火墙问题，你都可以用文中的排查流程去走一遍，无非就是规则匹配问题。</p></li>
+
+<li><p>分析网络问题，简单的抓包可以达到事半功倍的效果，配合 Wireshark 一起食用味道更佳。</p></li>
+</ol>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">RickyLin7</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        2020-05-24
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/lvs/">LVS</a>
+          </div>
+      <nav class="post-nav">
+        
+        
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="gitalk-container"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+        id: '2020-05-24 21:19:54 \x2b0800 CST',
+        title: 'LVS-TUN模式集群在开启防火墙情况下的一次调试之旅',
+        clientID: '857106e549022fc115bb',
+        clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
+        repo: 'rickylin7.github.io',
+        owner: 'RickyLin7',
+        admin: ['RickyLin7'],
+        body: decodeURI(location.href)
+      });
+      gitalk.render('gitalk-container');
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/gitalk/gitalk">comments powered by gitalk.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://github.com/RickyLin7" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> site pv: <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> site uv: <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">RickyLin7</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.d7b7ada643c9c1a983026e177f141f7363b4640d619caf01d8831a6718cd44ea.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

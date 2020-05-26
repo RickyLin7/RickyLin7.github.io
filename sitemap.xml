@@ -2,19 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://blog.moontalk.top/categories/</loc>
+    <loc>https://blog.moontalk.top/tags/lvs/</loc>
+    <lastmod>2020-05-24T21:19:54+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.moontalk.top/post/my-first-blog/</loc>
+    <lastmod>2020-05-24T21:19:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/</loc>
+    <lastmod>2020-05-24T21:19:54+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.moontalk.top/post/</loc>
+    <lastmod>2020-05-24T21:19:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/tags/</loc>
+    <lastmod>2020-05-24T21:19:54+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.moontalk.top/categories/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
