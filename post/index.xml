@@ -13,10 +13,10 @@
     
     <item>
       <title>LVS-TUN模式集群在开启防火墙情况下的一次调试之旅</title>
-      <link>https://blog.moontalk.top/post/my-first-blog/</link>
+      <link>https://blog.moontalk.top/post/lvs-with-firewall/</link>
       <pubDate>Sun, 24 May 2020 21:19:54 +0800</pubDate>
       
-      <guid>https://blog.moontalk.top/post/my-first-blog/</guid>
+      <guid>https://blog.moontalk.top/post/lvs-with-firewall/</guid>
       <description>一、集群说明 OS: CentOS7.2 DS(LVS): 10.1.61.114 LVS-MODE: TUN VIP: 10.1.61.82 RS1(Nginx): 10.1.62.105 RS2(Nginx): 10.1.62.106 PORT: 80 防火墙: DS、RS1、RS2均安装 firewalld，且开放80端口（tcp，udp） 二、预备知识 firewalld</description>
     </item>
     
