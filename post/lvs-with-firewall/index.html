@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2020-05-24T21:19:54&#43;08:00" />
 <meta itemprop="dateModified" content="2020-05-24T21:19:54&#43;08:00" />
-<meta itemprop="wordCount" content="2968">
+<meta itemprop="wordCount" content="2967">
 
 
 
@@ -250,8 +250,11 @@
 
 <p>再次确认下，这条规则源地址、目标地址、端口、协议等等都没有问题，而且最开始我也直接访问 RS1:PORT 确认过 Nginx 服务是没有问题的，可以正常返回，所以我怀疑从 <strong>DS → RS1</strong> 的数据包并不是一个 tcp 包，所以没有被此规则匹配并处理。</p>
 
-<p><strong>⑥</strong> 然后又返回去查了下 LVS-TUN 模式的数据包处理流程。
-&gt; ipvs 工作在 INPUT 链，它在原有的 IP 报文外再次封装多一层 IP 头，内部 IP 头 (源地址为 CIP，目标 IP 为 VIP)，外层 IP 头 (源地址为 DIP，目标 IP 为 RIP)，然后将封装好的数据包从 DS 发往 RS 。</p>
+<p><strong>⑥</strong> 然后又返回去查了下 LVS-TUN 模式的数据包处理流程。</p>
+
+<blockquote>
+<p>ipvs 工作在 INPUT 链，它在原有的 IP 报文外再次封装多一层 IP 头，内部 IP 头 (源地址为 CIP，目标 IP 为 VIP)，外层 IP 头 (源地址为 DIP，目标 IP 为 RIP)，然后将封装好的数据包从 DS 发往 RS 。</p>
+</blockquote>
 
 <p>到这，我已经恍然大悟了，它确实不是一个 tcp 包，再翻到之前从 DS 上抓取 RS1 的数据包内容，可以看到 <strong>DS → RS1</strong> 的数据包协议为 ipip-proto-4。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61wl9i4rj30yg05eq5o.jpg" alt="" /></p>
 
