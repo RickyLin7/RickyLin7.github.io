@@ -21,7 +21,7 @@
     </item>
     
     <item>
-      <title>LVS-TUN模式集群在开启防火墙情况下的一次调试之旅</title>
+      <title>LVS-TUN模式集群防火墙下的调试之旅</title>
       <link>https://blog.moontalk.top/post/lvs-with-firewall/</link>
       <pubDate>Sun, 24 May 2020 21:19:54 +0800</pubDate>
       
