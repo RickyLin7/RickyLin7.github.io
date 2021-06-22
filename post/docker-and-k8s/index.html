@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2021-06-22T21:36:11&#43;08:00" />
 <meta itemprop="dateModified" content="2021-06-22T21:36:11&#43;08:00" />
-<meta itemprop="wordCount" content="3024">
+<meta itemprop="wordCount" content="3021">
 
 
 
@@ -180,13 +180,13 @@
 
 <h3 id="docker进场">Docker进场</h3>
 
-<p>2013年，当时名为 dotCloud 的公司（后来更名为 Docker）宣布开源自己的容器项目 Docker。当时这个决定并没有引来多少关注。Cloud Foundry 的首席产品经理在经过仔细对比之后，告诉用户 Docker 也只是一个使用 LXC 技术实现的“沙盒”而已，跟 Cloud Foundry 底层的容器并没有太大不同。然而偏偏是剩下的一小部分不一样的功能，帮助 Docker 项目完成了对其他 PaaS 平台的“降维打击”，这个功能就是 Docker 镜像。</p>
+<p>2013年，当时名为 dotCloud 的公司（后来更名为 Docker）宣布开源自己的容器项目 Docker。当时这个决定并没有引来多少关注。Cloud Foundry 的首席产品经理在经过仔细对比之后，告诉用户 Docker 也只是一个使用 LXC 技术实现的“沙盒”而已，跟 Cloud Foundry 底层的容器并没有太大不同。然而偏偏是剩下的一小部分不一样的功能，帮助 Docker 项目完成了对其他 PaaS 平台的“降维打击”，这个功能就是 <strong>Docker 镜像</strong>。</p>
 
 <p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr4hzbb69j318a0nxai6.jpg" alt="docker-img" /></p>
 
 <p>我在上面提到过，Buildpack 的打包工作是 PaaS 用户的痛点，<strong>因为它无法很好的处理云端虚拟机和本地环境不一致的问题</strong>，而 Docker 镜像恰恰解决了打包这个根本性的问题。Docker 项目通过容器镜像，直接将一个应用运行所需的完整环境，<strong>即：整个操作系统的文件系统也打包了进去</strong>，这也就意味着，Docker 镜像保证了本地环境和云端环境的高度一致，真正意义上的实现了“一次发布，随处运行”。比起 Cloud Foundry 的 Buildpack，高下立判。</p>
 
-<p>毫不夸张的说，Docker 镜像的出现是一次软件交付史的变革，在<strong>”软件究竟应该通过什么样的方式进行交付”</strong>这个问题上，它给出了接近完美的答案。时至今日，Docker 镜像已然成为了现代软件交付与分发的事实标准。</p>
+<p>毫不夸张的说，Docker 镜像的出现是一次软件交付史的变革，在<strong>软件究竟应该通过什么样的方式进行交付</strong>这个问题上，它给出了接近完美的答案。时至今日，Docker 镜像已然成为了现代软件交付与分发的事实标准。</p>
 
 <h3 id="微服务与容器">微服务与容器</h3>
 
@@ -208,8 +208,11 @@
 
 <p>而就在 2014 年的 6 月，基础设施领域的翘楚 Google 公司突然发力，正式宣告了一个名叫 Kubernetes 项目的诞生，这个项目的出现如同当初 Docker 对经典 PaaS 的“降维打击”一般，再次改变了整个容器市场的格局。</p>
 
-<p>为什么 Kubernetes 能够在“编排之争”中取得最终胜利，我觉得跟项目定位有很大的关系。<strong>从一开始，Kubernetes 项目就没有像同时期的各种“容器云”项目那样，把 Docker 作为整个架构的核心，而仅仅把它作为最底层的一个容器运行时实现。</strong>而 Kubernetes 项目要着重解决的问题，是来自于 Borg 的研究人员在论文中提到的一个非常重要的观点：
-&gt; 运行在大规模集群中的各种任务之间，实际上存在着各种各样的关系。这些关系的处理，才是作业编排和管理系统最困难的地方。</p>
+<p>为什么 Kubernetes 能够在“编排之争”中取得最终胜利，我觉得跟项目定位有很大的关系。<strong>从一开始，Kubernetes 项目就没有像同时期的各种“容器云”项目那样，把 Docker 作为整个架构的核心，而仅仅把它作为最底层的一个容器运行时实现。</strong>而 Kubernetes 项目要着重解决的问题，是来自于 Borg 的研究人员在论文中提到的一个非常重要的观点：</p>
+
+<blockquote>
+<p>运行在大规模集群中的各种任务之间，实际上存在着各种各样的关系。这些关系的处理，才是作业编排和管理系统最困难的地方。</p>
+</blockquote>
 
 <p>正是因为这样的出发点，让 Kubernetes 从一开始就避免了与 Docker Swarm 和 Mesos 社区同质化。<strong>Kubernetes 把容器进行组合，用 Pod 的概念来模拟进程组的行为。坚持用声明式 API 加控制器模型来进行应用编排，用 API 资源对象的创建与更新（PATCH）来驱动整个系统的持续运转。</strong>相比于 Docker 体系以“单一容器”为核心的应用定义方式，Kubernetes 项目则提出了一整套容器化设计模式和对应的控制模型。更确切的说，有了 Pod 和容器设计模式，我们的应用基础设施才能够与应用（而不是容器）进行交互和响应的能力，实现了“云”与“应用”的直接对接。而有了声明式 API，我们的应用基础设施才能真正同下层资源、调度、编排、网络、存储等云的细节与逻辑进行解耦。</p>
 
