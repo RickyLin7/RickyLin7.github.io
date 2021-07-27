@@ -6,10 +6,19 @@
     <description>Recent content in Python on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 27 Jul 2021 19:43:54 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 27 Jul 2021 19:50:11 +0800</lastBuildDate>
     
 	<atom:link href="https://blog.moontalk.top/tags/python/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Tornado源码分析(2) - IOLoop</title>
+      <link>https://blog.moontalk.top/post/tornado-code-analysis-2/</link>
+      <pubDate>Tue, 27 Jul 2021 19:50:11 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/tornado-code-analysis-2/</guid>
+      <description>注：本文所分析 tornado 源码版本为 4.5.3 IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。 IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一</description>
+    </item>
     
     <item>
       <title>Tornado源码分析(1) - Configurable</title>

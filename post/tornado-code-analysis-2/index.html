@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Tornado源码分析(2) - IOLoop - moontalk</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="RickyLin7" /><meta name="description" content="注：本文所分析 tornado 源码版本为 4.5.3 IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。 IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.59.1 with theme even" />
+
+
+<link rel="canonical" href="https://blog.moontalk.top/post/tornado-code-analysis-2/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.c5c7c6e13305371a90e1e1d9469de50ab9055253f722c6719157747c6532bb01.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="Tornado源码分析(2) - IOLoop" />
+<meta property="og:description" content="注：本文所分析 tornado 源码版本为 4.5.3 IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。 IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.moontalk.top/post/tornado-code-analysis-2/" />
+<meta property="article:published_time" content="2021-07-27T19:50:11+08:00" />
+<meta property="article:modified_time" content="2021-07-27T19:50:11+08:00" />
+<meta itemprop="name" content="Tornado源码分析(2) - IOLoop">
+<meta itemprop="description" content="注：本文所分析 tornado 源码版本为 4.5.3 IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。 IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一">
+
+
+<meta itemprop="datePublished" content="2021-07-27T19:50:11&#43;08:00" />
+<meta itemprop="dateModified" content="2021-07-27T19:50:11&#43;08:00" />
+<meta itemprop="wordCount" content="1764">
+
+
+
+<meta itemprop="keywords" content="Tornado,Python,Web框架," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Tornado源码分析(2) - IOLoop"/>
+<meta name="twitter:description" content="注：本文所分析 tornado 源码版本为 4.5.3 IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。 IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">MoonTalk</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">MoonTalk</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Tornado源码分析(2) - IOLoop</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-07-27 </span>
+        <div class="post-category">
+            <a href="/categories/python/"> Python </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> times read </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">Contents</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#创建-ioloop-实例">创建 IOLoop 实例</a></li>
+<li><a href="#ioloop-pollioloop-功能剖析">IOLoop(PollIOLoop) 功能剖析</a>
+<ul>
+<li><a href="#io-事件处理">IO 事件处理</a></li>
+<li><a href="#回调函数处理">回调函数处理</a></li>
+<li><a href="#定时任务处理">定时任务处理</a></li>
+<li><a href="#启动-io-多路复用器">启动 IO 多路复用器</a></li>
+<li><a href="#关闭-io-多路复用器">关闭 IO 多路复用器</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<blockquote>
+<p><em>注：本文所分析 tornado 源码版本为 4.5.3</em></p>
+</blockquote>
+
+<p>IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。</p>
+
+<p>IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一个中心IO多路复用器上，同时主线程/进程阻塞在多路复用器上，一旦有IO事件准备就绪（文件描述符或socket可读、写），多路复用器就会返回并将事先注册的相应IO事件分发到对应的处理器中。</p>
+
+<h3 id="创建-ioloop-实例">创建 IOLoop 实例</h3>
+
+<p>IOLoop 的父类是 Configurable 类，也就是说 IOLoop 是一个直属配置子类</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">IOLoop</span><span class="p">(</span><span class="n">Configurable</span><span class="p">):</span>
+    <span class="o">......</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里需要结合 Configurable 类说明：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">Configurable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">__impl_class</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c1"># type: type</span>
+    <span class="n">__impl_kwargs</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c1"># type: Dict[str, Any]</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># 获取配置基类，不一定与cls参数相同</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configurable_base</span><span class="p">()</span>
+        <span class="n">init_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># 如果配置基类是cls本身</span>
+        <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="n">base</span><span class="p">:</span>
+            <span class="c1"># 获取实现类</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configured_class</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">base</span><span class="o">.</span><span class="n">__impl_kwargs</span><span class="p">:</span>
+                <span class="n">init_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">__impl_kwargs</span><span class="p">)</span>
+        <span class="c1"># 如果配置基类不是cls本身，则直接使用当前类作为实现类</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="bp">cls</span>
+        <span class="n">init_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># 创建实现类的实例</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">Configurable</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">impl</span><span class="p">)</span>
+        <span class="c1"># 调用实例的initialize方法，进行初始化。</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">init_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>首先实例化一个实现类对象，也就是调用 IOLoop 类的 configurable_default 方法并返回赋值给 impl：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">configurable_default</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">select</span><span class="p">,</span> <span class="s2">&#34;epoll&#34;</span><span class="p">):</span>  <span class="c1"># 这里假设是支持epoll的Linux内核系统，所以返回EPollIOLoop</span>
+        <span class="kn">from</span> <span class="nn">tornado.platform.epoll</span> <span class="kn">import</span> <span class="n">EPollIOLoop</span>
+        <span class="k">return</span> <span class="n">EPollIOLoop</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">select</span><span class="p">,</span> <span class="s2">&#34;kqueue&#34;</span><span class="p">):</span>
+        <span class="c1"># Python 2.6+ on BSD or Mac</span>
+        <span class="kn">from</span> <span class="nn">tornado.platform.kqueue</span> <span class="kn">import</span> <span class="n">KQueueIOLoop</span>
+        <span class="k">return</span> <span class="n">KQueueIOLoop</span>
+    <span class="kn">from</span> <span class="nn">tornado.platform.select</span> <span class="kn">import</span> <span class="n">SelectIOLoop</span>
+    <span class="k">return</span> <span class="n">SelectIOLoop</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>根据假设，impl 当前为 EPollIOLoop 类对象，然后需要实例化该对象，运行其 initialize 方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">EPollIOLoop</span><span class="p">(</span><span class="n">PollIOLoop</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EPollIOLoop</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">impl</span><span class="o">=</span><span class="n">select</span><span class="o">.</span><span class="n">epoll</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>由上述代码可见，EPollIOLoop 类的主要方法都在其父类 PollIOLoop 中实现，我们看一下 PollIOLoop 都做了哪些初始化操作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">PollIOLoop</span><span class="p">(</span><span class="n">IOLoop</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">impl</span><span class="p">,</span> <span class="n">time_func</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PollIOLoop</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># 调用IOLoop的initialize方法</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="o">=</span> <span class="n">impl</span>                             <span class="c1"># self._impl = select.epoll()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="p">,</span> <span class="s1">&#39;fileno&#39;</span><span class="p">):</span>
+            <span class="n">set_close_exec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_func</span> <span class="o">=</span> <span class="n">time_func</span> <span class="ow">or</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span> <span class="o">=</span> <span class="p">{}</span>                           <span class="c1"># 存储fd和handler的对应关系：{fileno(): (文件描述符对象,处理函数)...}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_events</span> <span class="o">=</span> <span class="p">{}</span>                             <span class="c1"># 存储epoll_obj.poll()返回的事件，也就是哪个fd发生了什么事件{(fd1, event1), (fd2, event2)...}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>         <span class="c1"># 存储回调函数</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span> <span class="o">=</span> <span class="p">[]</span>                           <span class="c1"># 存储定时任务</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cancellations</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_running</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stopped</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_closing</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread_ident</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blocking_signal_threshold</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_counter</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+        <span class="c1"># Create a pipe that we send bogus data to when we want to wake</span>
+        <span class="c1"># the I/O loop when it is idle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_waker</span> <span class="o">=</span> <span class="n">Waker</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_waker</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span>
+                         <span class="k">lambda</span> <span class="n">fd</span><span class="p">,</span> <span class="n">events</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waker</span><span class="o">.</span><span class="n">consume</span><span class="p">(),</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">READ</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="ioloop-pollioloop-功能剖析">IOLoop(PollIOLoop) 功能剖析</h3>
+
+<h4 id="io-事件处理">IO 事件处理</h4>
+
+<p>我们知道 epoll 支持以下三种操作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">EPOLL_CTL_ADD    添加一个新的 epoll 事件
+EPOLL_CTL_DEL    删除一个 epoll 事件
+EPOLL_CTL_MOD    改变一个事件的监听方式</pre></td></tr></table>
+</div>
+</div>
+<p>这三种操作分别对应 PollIOLoop 中的三个函数：<code>add_handler, remove_handler, update_handler</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># PollIOLoop 方法</span>
+<span class="k">def</span> <span class="nf">add_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">events</span><span class="p">):</span>
+    <span class="s1">&#39;&#39;&#39;
+</span><span class="s1">    向 epoll 中注册事件，并在 self._handlers[fd] 中为该文件描述符添加相应的处理函数（事件发生时触发）
+</span><span class="s1">    &#39;&#39;&#39;</span>
+    <span class="n">fd</span><span class="p">,</span> <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">[</span><span class="n">fd</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">stack_context</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">handler</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">events</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">update_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">events</span><span class="p">):</span>
+    <span class="n">fd</span><span class="p">,</span> <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">events</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">remove_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fd</span><span class="p">):</span>
+    <span class="n">fd</span><span class="p">,</span> <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_events</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">unregister</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">gen_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&#34;Error deleting fd from IOLoop&#34;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h4 id="回调函数处理">回调函数处理</h4>
+
+<p><code>add_callback</code> 方法用来直接添加回调函数，<code>add_future</code> 方法用来间接的添加回调函数</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># PollIOLoop 方法</span>
+<span class="k">def</span> <span class="nf">add_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closing</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+        <span class="n">stack_context</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">callback</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="o">...</span> <span class="c1"># 忽略相关线程操作</span>
+        
+<span class="c1"># 父类 IOLoop 方法</span>
+<span class="k">def</span> <span class="nf">add_future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">future</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+    <span class="c1"># 为 future 对象添加包装后的回调函数，该回调函数会在 future 对象被 set_done 后添加至 self._callbacks 中</span>
+    <span class="k">assert</span> <span class="n">is_future</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+    <span class="n">callback</span> <span class="o">=</span> <span class="n">stack_context</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span>
+    <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">future</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_callback</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="n">future</span><span class="p">))</span></code></pre></td></tr></table>
+</div>
+</div>
+<h4 id="定时任务处理">定时任务处理</h4>
+
+<p><code>self.add_timeout</code> 用来添加定时任务（<code>self.call_later、self.call_at</code> 都是间接调用了该方法）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 父类 IOLoop 方法</span>
+<span class="k">def</span> <span class="nf">add_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">deadline</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_at</span><span class="p">(</span><span class="n">deadline</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">deadline</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_at</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta_to_seconds</span><span class="p">(</span><span class="n">deadline</span><span class="p">),</span>
+                            <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&#34;Unsupported deadline </span><span class="si">%r</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="n">deadline</span><span class="p">)</span>
+        
+<span class="k">def</span> <span class="nf">call_later</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_at</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">delay</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">call_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">when</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_timeout</span><span class="p">(</span><span class="n">when</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span></code></pre></td></tr></table>
+</div>
+</div>
+<h4 id="启动-io-多路复用器">启动 IO 多路复用器</h4>
+
+<p>IO多路复用器启动后会持续运行一个循环，循环过程中主要做以下几件事：</p>
+
+<ol>
+<li>执行回调函数</li>
+<li>运行定时任务</li>
+<li>当某个文件描述符发生事件时，执行对应的处理函数（handler）</li>
+</ol>
+
+<p>以下是简化版的启动代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># PollIOLoop 方法</span>
+<span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">ncallbacks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span><span class="p">)</span>
+        <span class="n">due_timeouts</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># 将时间已到的定时任务放到 due_timeouts 中</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">:</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cancellations</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">deadline</span> <span class="o">&lt;=</span> <span class="n">now</span><span class="p">:</span>
+                    <span class="n">due_timeouts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cancellations</span> <span class="o">&gt;</span> <span class="mi">512</span> <span class="ow">and</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cancellations</span> <span class="o">&gt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cancellations</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span>
+                                  <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">]</span>
+                <span class="n">heapq</span><span class="o">.</span><span class="n">heapify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span><span class="p">)</span>
+                
+        <span class="c1"># 执行回调函数</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncallbacks</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span><span class="o">.</span><span class="n">popleft</span><span class="p">())</span>
+        <span class="c1"># 执行定时任务</span>
+        <span class="k">for</span> <span class="n">timeout</span> <span class="ow">in</span> <span class="n">due_timeouts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">timeout</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_callback</span><span class="p">(</span><span class="n">timeout</span><span class="o">.</span><span class="n">callback</span><span class="p">)</span>
+        <span class="n">due_timeouts</span> <span class="o">=</span> <span class="n">timeout</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c1"># 如果停止运行则终止 ioloop</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span><span class="p">:</span>
+            <span class="k">break</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">event_pairs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="n">poll_timeout</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">errno_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EINTR</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_events</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">event_pairs</span><span class="p">)</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_events</span><span class="p">:</span>
+            <span class="n">fd</span><span class="p">,</span> <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_events</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>  <span class="c1"># 获取一个fd及其对应事件</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fd_obj</span><span class="p">,</span> <span class="n">handler_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">[</span><span class="n">fd</span><span class="p">]</span>  <span class="c1"># 获取该fd对应时间的处理函数</span>
+                <span class="n">handler_func</span><span class="p">(</span><span class="n">fd_obj</span><span class="p">,</span> <span class="n">events</span><span class="p">)</span>  <span class="c1"># 执行该事件处理函数</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">errno_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EPIPE</span><span class="p">:</span>  
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">handle_callback_exception</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fd</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_callback_exception</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fd</span><span class="p">))</span>
+        <span class="n">fd_obj</span> <span class="o">=</span> <span class="n">handler_func</span> <span class="o">=</span> <span class="bp">None</span></code></pre></td></tr></table>
+</div>
+</div>
+<h4 id="关闭-io-多路复用器">关闭 IO 多路复用器</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># PollIOLoop 方法</span>
+<span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_fds</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_closing</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">remove_handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_waker</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+    <span class="c1"># 若指定为True，则关闭所有文件描述符</span>
+    <span class="k">if</span> <span class="n">all_fds</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">fd</span><span class="p">,</span> <span class="n">handler</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close_fd</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_waker</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span> <span class="o">=</span> <span class="bp">None</span>   <span class="c1"># 清空回调函数</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_timeouts</span> <span class="o">=</span> <span class="bp">None</span>    <span class="c1"># 清空定时任务</span></code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">RickyLin7</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        2021-07-27
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/tornado/">Tornado</a>
+          <a href="/tags/python/">Python</a>
+          <a href="/tags/web%E6%A1%86%E6%9E%B6/">Web框架</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/tornado-code-analysis-1/">
+            <span class="next-text nav-default">Tornado源码分析(1) - Configurable</span>
+            <span class="next-text nav-mobile">Next</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="gitalk-container"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+        id: '2021-07-27 19:50:11 \x2b0800 CST',
+        title: 'Tornado源码分析(2) - IOLoop',
+        clientID: '857106e549022fc115bb',
+        clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
+        repo: 'rickylin7.github.io',
+        owner: 'RickyLin7',
+        admin: ['RickyLin7'],
+        body: decodeURI(location.href)
+      });
+      gitalk.render('gitalk-container');
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/gitalk/gitalk">comments powered by gitalk.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://github.com/RickyLin7" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    
+    
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2020 - 
+    2021
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">RickyLin7</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.d7b7ada643c9c1a983026e177f141f7363b4640d619caf01d8831a6718cd44ea.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>
