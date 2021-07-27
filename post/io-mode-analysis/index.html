@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>I/O模式详解 - moontalk</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="RickyLin7" /><meta name="description" content="用户空间和内核空间 我们知道操作系统采用的是虚拟地址空间，以32位操作系统举例，它的寻址空间为4G(2的32次方)，这里解释二个概念: 寻址：是" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.59.1 with theme even" />
+
+
+<link rel="canonical" href="https://blog.moontalk.top/post/io-mode-analysis/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.c5c7c6e13305371a90e1e1d9469de50ab9055253f722c6719157747c6532bb01.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="I/O模式详解" />
+<meta property="og:description" content="用户空间和内核空间 我们知道操作系统采用的是虚拟地址空间，以32位操作系统举例，它的寻址空间为4G(2的32次方)，这里解释二个概念: 寻址：是" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.moontalk.top/post/io-mode-analysis/" />
+<meta property="article:published_time" content="2021-07-27T19:28:34+08:00" />
+<meta property="article:modified_time" content="2021-07-27T19:28:34+08:00" />
+<meta itemprop="name" content="I/O模式详解">
+<meta itemprop="description" content="用户空间和内核空间 我们知道操作系统采用的是虚拟地址空间，以32位操作系统举例，它的寻址空间为4G(2的32次方)，这里解释二个概念: 寻址：是">
+
+
+<meta itemprop="datePublished" content="2021-07-27T19:28:34&#43;08:00" />
+<meta itemprop="dateModified" content="2021-07-27T19:28:34&#43;08:00" />
+<meta itemprop="wordCount" content="4307">
+
+
+
+<meta itemprop="keywords" content="I/O,操作系统,Linux," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="I/O模式详解"/>
+<meta name="twitter:description" content="用户空间和内核空间 我们知道操作系统采用的是虚拟地址空间，以32位操作系统举例，它的寻址空间为4G(2的32次方)，这里解释二个概念: 寻址：是"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">MoonTalk</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">MoonTalk</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">I/O模式详解</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-07-27 </span>
+        <div class="post-category">
+            <a href="/categories/linux/"> Linux </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> times read </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">Contents</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#用户空间和内核空间">用户空间和内核空间</a></li>
+<li><a href="#进程切换">进程切换</a></li>
+<li><a href="#进程阻塞">进程阻塞</a></li>
+<li><a href="#文件描述符与socket">文件描述符与socket</a></li>
+<li><a href="#缓存i-o">缓存I/O</a></li>
+<li><a href="#io模式">IO模式</a>
+<ul>
+<li><a href="#阻塞i-o">阻塞I/O</a></li>
+<li><a href="#非阻塞i-o">非阻塞I/O</a></li>
+<li><a href="#i-o多路复用">I/O多路复用</a></li>
+<li><a href="#异步i-o">异步I/O</a></li>
+</ul></li>
+<li><a href="#总结">总结</a>
+<ul>
+<li><a href="#blocking-io-和-nonblocking-io-区别">Blocking IO 和 Nonblocking IO 区别</a></li>
+<li><a href="#synchronous-io-和-asynchronous-io-区别">Synchronous IO 和 Asynchronous IO 区别</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h3 id="用户空间和内核空间">用户空间和内核空间</h3>
+
+<p>我们知道操作系统采用的是虚拟地址空间，以32位操作系统举例，它的寻址空间为4G(2的32次方)，这里解释二个概念:</p>
+
+<ul>
+<li>寻址：是指操作系统能找到的地址范围，32位指的是地址总线的位数，你就想象32位的二进制数，每一位可以是0，可以是1，是不是有2的32次方种可能，2^32 次方就是可以访问到的最大内存空间，也就是4G。</li>
+<li>虚拟地址空间：为什么叫“虚拟”，因为我们内存一共就4G，但操作系统为每一个进程都分配了4G的内存空间，这个内存空间实际是虚拟的，虚拟内存到真实内存有个映射关系。例如X86 cpu采用的段页式地址映射模型。</li>
+</ul>
+
+<p>操作系统将这4G可访问的内存空间分为二部分，一部分是内核空间，一部分是用户空间。</p>
+
+<ul>
+<li>内核空间是操作系统内核访问的区域，独立于普通的应用程序，是受保护的内存空间。</li>
+<li>用户空间是普通应用程序可访问的内存区域。</li>
+</ul>
+
+<p>以 Linux 操作系统为例，将最高的1G字节（从虚拟地址0xC0000000到0xFFFFFFFF）供内核使用，称为内核空间（内核空间被所有进程共享），而将较低的3G字节（从虚拟地址0x00000000到0xBFFFFFFF）供各个进程使用，称为用户空间。空间分配如下图所示：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs5x94fmlzj30gm093aak.jpg" alt="" /></p>
+
+<h3 id="进程切换">进程切换</h3>
+
+<p>操作系统为了控制进程的执行，必须有能力挂起正在CPU上运行的进程，并恢复以前挂起的某个进程的执行，这种行为被称为进程切换，任务切换或上下文切换。</p>
+
+<p>进程的切换需要经历以下几个过程：</p>
+
+<ol>
+<li>保存处理机上下文，包括程序计数器和其他寄存器。</li>
+<li>更新PCB信息。</li>
+<li>把进程的PCB移入相应的队列，如就绪、在某事件阻塞等队列。</li>
+<li>选择另一个进程执行，并更新其PCB。</li>
+<li>更新内存管理的数据结构。</li>
+<li>恢复处理机上下文。</li>
+</ol>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grwss6owyoj30v40kydiw.jpg" alt="" /></p>
+
+<blockquote>
+<p>进程控制块（英语：Process Control Block，PCB）是操作系统核心中一种数据结构，PCB中记录了操作系统所需的，用于描述进程的当前情况以及控制进程运行的全部信息。每一个进程均有一个PCB，在创建进程时，建立PCB，伴随进程运行的全过程，直到进程撤消而撤消。</p>
+</blockquote>
+
+<p>进程的切换过程复杂，涉及到虚拟地址空间，内核栈和硬件上下文的切换，总之，<strong>非常消耗资源</strong>。</p>
+
+<h3 id="进程阻塞">进程阻塞</h3>
+
+<p>正在执行的进程，由于期待的某些事件未发生，如请求系统资源失败、等待某种操作的完成、新数据尚未到达或无新工作做等，则由系统自动执行阻塞原语（Block），使自己由运行状态变为阻塞状态。可见，进程的阻塞是进程自身的一种主动行为，因此只有处于运行态的进程（获得CPU），才可能将其转为阻塞状态。<strong>当进程进入阻塞状态，是不占用CPU资源的。</strong></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0lsj38a4j30sq0lcq7w.jpg" alt="" /></p>
+
+<h3 id="文件描述符与socket">文件描述符与socket</h3>
+
+<p>首先，在Linux系统中一切皆文件，文件又可分为：普通文件、目录文件、链接文件和设备文件。</p>
+
+<p>文件描述符（file descriptor）是操作系统内核为了高效管理已被打开的文件所创建的索引，用于指代被打开的文件。在linux操作系统中，每一个进程中都有一个文件描述符表，它是一个指针数组，系统默认初始化了数组的前3位。第0位指向标准的输入流（一般是键盘），第1位指向标准的输出流（一般是显示器），第2位指向标准的错误流（一般是也显示器）。我们可以用命令<code>ls -l /proc/$$/fd</code>查看一下当前<code>bash</code>的文件描述符:</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0l9ivxabj30ws05wt9t.jpg" alt="" /></p>
+
+<p>socket又叫网络套接字，它也是一个文件，如果一个进程创建了一个socket，那么这个进程的文件描述符列表中就会有一个指向socket的指针。我们可以执行如下命令进行验证：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"># 与www.baidu.com建立socket连接
+exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>5是文件描述符，任意数值，不能与已存在的索引值重复（0,1,2,255）
+&lt;&gt; 是重定向，&lt; 表示是输入流，&gt; 表示输出流，意思是 /dev/tcp/www.baidu.com/80 这个文件的文件描述符重定向到5（或者是这个文件的输入输出流执行文件描述符5），根据文件描述符5可以得到这个文件的输入输出流</p>
+</blockquote>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0letxiz3j30yg08mgnm.jpg" alt="" /></p>
+
+<h3 id="缓存i-o">缓存I/O</h3>
+
+<p>缓存I/O被称作为标准I/O，大多数文件系统的默认I/O操作都是缓存I/O。
+缓存I/O的数据传输模式：从磁盘先通过 DMA 模式（直接内存访问，是一种不经过CPU而直接从内存里存取数据的数据交换模式）拷贝到内核空间高速缓存页，再从高速缓存页通过CPU拷贝到用户空间应用缓存。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grwt6adhhzj30pr0ig76p.jpg" alt="" /></p>
+
+<p>缓存I/O的缺点：数据传输过程中需要在应用程序地址空间（用户空间）和缓存（内核空间）之间进行多次数据拷贝操作，这些拷贝操作会给CPU以及内存带来一定的开销。</p>
+
+<h3 id="io模式">IO模式</h3>
+
+<p>在上面“缓存I/O”中提到，对于一次IO访问（以read举例），数据会先被拷贝到操作系统内核的缓冲区中，然后再从操作系统内核的缓冲区拷贝到应用程序地址空间。所以说，当一个read操作发生时，它会经历两个阶段：</p>
+
+<ol>
+<li>等待数据准备 (Waiting for the data to be ready)</li>
+<li>将数据从内核拷贝到进程中 (Copying the data from the kernel to the process)</li>
+</ol>
+
+<p>因为这两个阶段的存在，linux 系统产生了以下五种网络IO模型：</p>
+
+<ul>
+<li>阻塞 I/O（blocking IO）</li>
+<li>非阻塞 I/O（nonblocking IO）</li>
+<li>I/O 多路复用（ IO multiplexing）</li>
+<li>异步 I/O（asynchronous IO）</li>
+<li>信号驱动 I/O（ signal driven IO）</li>
+</ul>
+
+<p>注：由于信号驱动 I/O在实际中并不常用，所以下面文章中只涉及剩下的四种IO模型。</p>
+
+<h4 id="阻塞i-o">阻塞I/O</h4>
+
+<p>在Linux中，默认情况下所有的socket都是blocking，一个典型的读操作流程如下图所示：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0lxn0nbnj30fc097mxl.jpg" alt="" /></p>
+
+<p>当用户进程（application）调用 recvfrom 这个系统调用，kernel 开始IO第一阶段：准备数据（对于网络IO来说，很多数据在一开始并没有到达，比如还没有收到一个完整的数据包。此时 kernel 需要等待足够的数据）。这个等待的过程就是数据被拷贝到操作系统内核缓冲区的过程。而在用户进程这边，整个进程会处于阻塞状态（进程主动选择）。当 kernel 等待数据准备完成后执行IO第二阶段，它将数据从 kernel 中拷贝到用户进程（用户空间），然后 kernel 返回结果，用户进程解除阻塞状态重新运行。</p>
+
+<blockquote>
+<p>Blocking I/O 的特点是 IO 执行的两个阶段都存在 block。</p>
+</blockquote>
+
+<h4 id="非阻塞i-o">非阻塞I/O</h4>
+
+<p>在Linux中，可以通过设置socket使其变为non-blocking，non-blocking 的读操作流程如下图所示：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0lyyk6b7j30gr0993z8.jpg" alt="" /></p>
+
+<p>当用户进程（application）调用 recvfrom 这个系统调用，如果 kernel 中数据还没有准备就绪，那么它不会 block 用户进程，而是立刻返回 error。从用户进程角度来看，当它发起一个 read 操作后，并不需要等待，而是马上得到了返回结果，然后用户进程发现返回结果是 error，就知道数据还没有准备就绪，于是再次发起 recvfrom 的系统调用。通过这种轮询的机制，一旦 kernel 中的数据准备完成并再次收到用户进程的 system call，那么它就会立马将数据拷贝到用户进程，然后返回结果。</p>
+
+<blockquote>
+<p>Nonblocking I/O 的特点是用户进程需要不断轮询 kernel 数据是否准备就绪。</p>
+</blockquote>
+
+<h4 id="i-o多路复用">I/O多路复用</h4>
+
+<p>IO 多路复用就是我们常说的 select、poll、epoll，这种IO模式又被称为事件驱动IO（event driven IO）。它的基本原理就是 select、poll、epoll 这个 function 会不断的轮询所负责的所有 socket，当某个 socket 有数据到达了，就通知用户进程。select 和 epoll 的优点在于通过单个 process 就可以同时处理多个网络连接IO。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0m034im5j30gx092dgg.jpg" alt="" /></p>
+
+<p>当用户进程调用了 select，整个进程会处于 block 状态，与此同时，kernel 会“监视”所有 select 负责的 socket，当其中任何一个 socket 中的数据准备就绪，select 就会返回，此时用户进程再调用 read 操作，将数据从 kernel 拷贝到用户进程。</p>
+
+<blockquote>
+<p>IO多路复用的特点是通过一种机制使得一个进程能同时等待多个文件描述符，而这些文件描述符（socket）中如果有任意一个进入读就绪状态，select 函数就立马返回。</p>
+</blockquote>
+
+<p>可以看到，这个图实际上和 Blocking IO 的图并没有太大的不同，事实上还更差一些，因为这里需要使用两个 system call（select 和 recvfrom），而 Blocking IO 只使用了一个 system call （recvfrom）。所以，如果处理的连接数不是很多的话，使用IO多路复用不一定比使用多线程 + Blocking IO的应用性能更好，可能延迟更大。IO多路复用的优势在于它可以同时处理多个网络连接IO（connection），而不是针对单个连接处理更快。</p>
+
+<p>在IO多路复用模型中，针对每一个socket，一般都设置成non-blocking。但是在上图中，整个应用的process 其实是一直被 block 的，只不过这个 process 是被 select 这个函数 block，而不是被 socket IO 给 block 的。</p>
+
+<h4 id="异步i-o">异步I/O</h4>
+
+<p>Linux提供了AIO库函数实现异步，但是用的很少。目前有很多开源的异步IO库，例如libevent、libev、libuv。异步IO流程如下图所示：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0m0il5m5j30fw090wey.jpg" alt="" /></p>
+
+<p>用户进程发起 read 操作后立刻就可以去做其他事情。从 kernel 角度来看，当它收到 asynchronous read 的系统调用后立刻返回，这样就不会对用户进程产生任何 block。然后 kernel 会等待数据准备完成，再将数据拷贝到用户进程，当这些流程都完成后，kernel 会给用户进程发送一个 signal，通知用户进程它的 read 操作完成了。</p>
+
+<blockquote>
+<p>异步 IO 的特点是用户进程在整个IO过程中都不会被 block，发起 read 操作之后就可以继续干别的事情，kernel 会将数据主动拷贝至用户进程。</p>
+</blockquote>
+
+<h3 id="总结">总结</h3>
+
+<p>各个 IO 模型的比较如图所示：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs2p5qyqrcj30h2093js8.jpg" alt="" /></p>
+
+<h4 id="blocking-io-和-nonblocking-io-区别">Blocking IO 和 Nonblocking IO 区别</h4>
+
+<p>阻塞与非阻塞这两个概念其实是相对于调用进程本身状态来讲的，简单来说就是进程IO调用时会不会阻塞到进程自身。</p>
+
+<ul>
+<li>Blocking IO：在用户进程中执行IO调用的时候，进程会等待该IO操作，而使得其他操作无法执行。</li>
+<li>Nonblocking IO：在用户进程中执行IO调用的时候，无论成功与否（可能 kernel 正在准备数据），该IO操作会立即返回，之后进程可以进行其他操作（当然如果是读取到数据，一般就接着进行数据处理）。</li>
+</ul>
+
+<h4 id="synchronous-io-和-asynchronous-io-区别">Synchronous IO 和 Asynchronous IO 区别</h4>
+
+<p>在 POSIX 中对于两者的定义如下所示：</p>
+
+<ul>
+<li>A synchronous I/O operation causes the requesting process to be blocked until that I/O operation completes;</li>
+<li>An asynchronous I/O operation does not cause the requesting process to be blocked;</li>
+</ul>
+
+<p>好像区别就是是否会导致请求进程阻塞？那 Nonblocking IO 并没有被 block 啊，为什么会属于同步IO呢？</p>
+
+<p>针对上面的疑问，我更喜欢从另一个角度去解释这两个概念，我们将维度提高一层，先来看看同步和异步这两个概念有什么区别，同步和异步其实主要关注的是双方的消息通信机制：</p>
+
+<ul>
+<li>同步：双方的动作是经过双方协调的，步调一致的。</li>
+<li>异步：双方并不需要协调，都可以随意进行各自的操作。</li>
+</ul>
+
+<p>然后从IO这个场景看去，这里的双方指代的是用户进程和IO设备，基于此我们将标题中的两个概念扩展可得：</p>
+
+<ul>
+<li>同步IO：用户进程发出IO调用，去获取IO设备数据，双方的数据要经过内核缓冲区同步，完全准备好后，再复制返回到用户进程。而复制返回到用户进程会导致请求进程阻塞，直到I/O操作完成（Nonblocking IO 模式中用户进程在这个阶段也是被 block 的）。</li>
+<li>异步IO：用户进程发出IO调用，去获取IO设备数据，并不需要同步，内核直接将数据复制到进程，整个过程不会导致请求进程阻塞。</li>
+</ul>
+
+<p>所以按照这个定义来说，Blocking IO、Nonblocking IO、IO multiplexing 和 signal driven IO 都属于 synchronous IO。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">RickyLin7</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        2021-07-27
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/i/o/">I/O</a>
+          <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>
+          <a href="/tags/linux/">Linux</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/resource-test/">
+            <span class="next-text nav-default">Linux资源隔离与资源限制实验</span>
+            <span class="next-text nav-mobile">Next</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="gitalk-container"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+        id: '2021-07-27 19:28:34 \x2b0800 CST',
+        title: 'I\/O模式详解',
+        clientID: '857106e549022fc115bb',
+        clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
+        repo: 'rickylin7.github.io',
+        owner: 'RickyLin7',
+        admin: ['RickyLin7'],
+        body: decodeURI(location.href)
+      });
+      gitalk.render('gitalk-container');
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/gitalk/gitalk">comments powered by gitalk.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://github.com/RickyLin7" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    
+    
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2020 - 
+    2021
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">RickyLin7</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.d7b7ada643c9c1a983026e177f141f7363b4640d619caf01d8831a6718cd44ea.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>
