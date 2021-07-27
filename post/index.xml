@@ -6,10 +6,19 @@
     <description>Recent content in Posts on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 27 Jul 2021 19:50:11 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 27 Jul 2021 19:53:12 +0800</lastBuildDate>
     
 	<atom:link href="https://blog.moontalk.top/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Tornado源码分析(3) - 协程</title>
+      <link>https://blog.moontalk.top/post/tornado-code-analysis-3/</link>
+      <pubDate>Tue, 27 Jul 2021 19:53:12 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/tornado-code-analysis-3/</guid>
+      <description>注：本文所分析 tornado 源码版本为 4.5.3 Future 对象 Future 对象可以简单的理解为一个异步操作的占位符，Future 对象有以下几个特性： 包含了很多属性，包括 _result 和 _ca</description>
+    </item>
     
     <item>
       <title>Tornado源码分析(2) - IOLoop</title>
