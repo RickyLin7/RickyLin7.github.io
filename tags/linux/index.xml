@@ -6,10 +6,19 @@
     <description>Recent content in Linux on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 27 Jul 2021 19:28:34 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 27 Jul 2021 19:37:19 +0800</lastBuildDate>
     
 	<atom:link href="https://blog.moontalk.top/tags/linux/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>IO多路复用 - select、poll、epoll</title>
+      <link>https://blog.moontalk.top/post/io-multiplexing/</link>
+      <pubDate>Tue, 27 Jul 2021 19:37:19 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/io-multiplexing/</guid>
+      <description>承接上篇（I/O模式详解），这一节来整理一下关于IO多路复用的相关知识。 select、poll、epoll 都是IO多路复用的机制。IO多路复</description>
+    </item>
     
     <item>
       <title>I/O模式详解</title>

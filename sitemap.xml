@@ -3,62 +3,69 @@
   
   <url>
     <loc>https://blog.moontalk.top/categories/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/tags/i/o/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://blog.moontalk.top/post/io-mode-analysis/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <loc>https://blog.moontalk.top/post/io-multiplexing/</loc>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/tags/linux/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/categories/linux/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/post/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/tags/</loc>
-    <lastmod>2021-07-27T19:28:34+08:00</lastmod>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.moontalk.top/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/</loc>
+    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.moontalk.top/post/io-mode-analysis/</loc>
     <lastmod>2021-07-27T19:28:34+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

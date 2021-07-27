@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>IO多路复用 - select、poll、epoll - moontalk</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="RickyLin7" /><meta name="description" content="承接上篇（I/O模式详解），这一节来整理一下关于IO多路复用的相关知识。 select、poll、epoll 都是IO多路复用的机制。IO多路复" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.59.1 with theme even" />
+
+
+<link rel="canonical" href="https://blog.moontalk.top/post/io-multiplexing/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.c5c7c6e13305371a90e1e1d9469de50ab9055253f722c6719157747c6532bb01.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="IO多路复用 - select、poll、epoll" />
+<meta property="og:description" content="承接上篇（I/O模式详解），这一节来整理一下关于IO多路复用的相关知识。 select、poll、epoll 都是IO多路复用的机制。IO多路复" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.moontalk.top/post/io-multiplexing/" />
+<meta property="article:published_time" content="2021-07-27T19:37:19+08:00" />
+<meta property="article:modified_time" content="2021-07-27T19:37:19+08:00" />
+<meta itemprop="name" content="IO多路复用 - select、poll、epoll">
+<meta itemprop="description" content="承接上篇（I/O模式详解），这一节来整理一下关于IO多路复用的相关知识。 select、poll、epoll 都是IO多路复用的机制。IO多路复">
+
+
+<meta itemprop="datePublished" content="2021-07-27T19:37:19&#43;08:00" />
+<meta itemprop="dateModified" content="2021-07-27T19:37:19&#43;08:00" />
+<meta itemprop="wordCount" content="2467">
+
+
+
+<meta itemprop="keywords" content="I/O,操作系统,Linux," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="IO多路复用 - select、poll、epoll"/>
+<meta name="twitter:description" content="承接上篇（I/O模式详解），这一节来整理一下关于IO多路复用的相关知识。 select、poll、epoll 都是IO多路复用的机制。IO多路复"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">MoonTalk</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">MoonTalk</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">IO多路复用 - select、poll、epoll</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-07-27 </span>
+        <div class="post-category">
+            <a href="/categories/linux/"> Linux </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> times read </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">Contents</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#select">select</a></li>
+<li><a href="#poll">poll</a></li>
+<li><a href="#epoll">epoll</a></li>
+<li><a href="#select-poll-epoll-区别">select、poll、epoll 区别</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>承接上篇（<a href="https://blog.moontalk.top/post/io-mode-analysis/">I/O模式详解</a>），这一节来整理一下关于IO多路复用的相关知识。</p>
+
+<p>select、poll、epoll 都是IO多路复用的机制。IO多路复用就是通过一种机制，让一个进程去监视多个文件描述符，一旦某个文件描述符就绪（读就绪或者写就绪），就通知用户进程去执行相应的读写操作；<strong>select、poll、epoll 本质上都是同步IO，因为它们都需要在读写事件就绪后自己负责读写，这个读写过程是阻塞的；</strong>异步IO无需自己负责读写，异步IO的实现会直接将数据从内核空间拷贝至用户进程。</p>
+
+<h3 id="select">select</h3>
+
+<p><strong>函数接口：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">#include &lt;sys/select.h&gt;
+#include &lt;sys/time.h&gt;
+
+#define FD_SETSIZE 1024
+#define NFDBITS (8 * sizeof(unsigned long))
+#define __FDSET_LONGS (FD_SETSIZE/NFDBITS)
+
+// 数据结构 (bitmap)
+typedef struct {
+    unsigned long fds_bits[__FDSET_LONGS];
+} fd_set;
+
+// API
+int select(
+    int max_fd, 
+    fd_set *readset, 
+    fd_set *writeset, 
+    fd_set *exceptset, 
+    struct timeval *timeout
+)                              // 返回值就绪描述符的数目
+
+FD_ZERO(int fd, fd_set* fds)   // 清空集合
+FD_SET(int fd, fd_set* fds)    // 将给定的描述符加入集合
+FD_ISSET(int fd, fd_set* fds)  // 判断指定描述符是否在集合中 
+FD_CLR(int fd, fd_set* fds)    // 将给定的描述符从文件中删除 </pre></td></tr></table>
+</div>
+</div>
+<p>select 函数监视的文件描述符分为3类，分别是 writefds、readfds 和 exceptfds。select 函数调用后会阻塞，直到有文件描述符准备就绪（数据可读、可写或者有 except），也可以设置超时返回（timeout 指定等待时间，如果立即返回设为 null 即可）。当 select 函数返回后，可以通过遍历 fd_set 来找到就绪的文件描述符。</p>
+
+<p><strong>select 缺点：</strong></p>
+
+<ul>
+<li>单个进程所监视的 fd 数量存在限制，通过 FD_SETSIZE 设置，默认为 1024（虽然可以通过修改宏定义甚至重新编译内核的方式提升参数限制，但会造成效率的降低）。</li>
+<li>单次调用 select 时，都需要把fd集合（fd_set）从用户态拷贝至内核态，当 fd 数量很多时开销很大。</li>
+<li>对 socket 扫描时是线性扫描，具有O(n)的无差别轮询复杂度（无论 socket 是否活跃），高并发场景下效率较低。</li>
+</ul>
+
+<h3 id="poll">poll</h3>
+
+<p><strong>函数接口：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">#include &lt;poll.h&gt;
+// 数据结构
+struct pollfd {
+    int fd;                         // 需要监视的文件描述符
+    short events;                   // 需要内核监视的事件
+    short revents;                  // 实际发生的事件
+};
+
+// API
+int poll(struct pollfd fds[], nfds_t nfds, int timeout);</pre></td></tr></table>
+</div>
+</div>
+<p>poll 本质上和 select 没有区别，<strong>只是优化了单个进程所监视 fd 数量限制</strong>（select 限制1024，而 poll 没有限制），原因是它是基于链表来存储的（pollfd）。</p>
+
+<p><strong>poll 缺点：</strong></p>
+
+<ul>
+<li>单次调用 poll 时，都需要把fd集合（pollfd fds[]）从用户态拷贝至内核态，当 fd 数量很多时开销很大。</li>
+<li>对 socket 扫描时是线性扫描，具有O(n)的无差别轮询复杂度（无论 socket 是否活跃），高并发场景下效率较低。</li>
+</ul>
+
+<h3 id="epoll">epoll</h3>
+
+<p><strong>函数接口：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">#include &lt;sys/epoll.h&gt;
+
+// 数据结构
+// 每一个epoll对象都有一个独立的eventpoll结构体
+// 用于存放通过epoll_ctl方法向epoll对象中添加进来的事件
+// epoll_wait检查是否有事件发生时，只需要检查eventpoll对象中的rdlist双链表中是否有epitem元素即可
+struct eventpoll {
+    /*红黑树的根节点，这颗树中存储着所有添加到epoll中的需要监控的事件*/
+    struct rb_root  rbr;
+    /*双链表中则存放着将要通过epoll_wait返回给用户的满足条件的事件*/
+    struct list_head rdlist;
+};
+
+// API
+int epoll_create(int size); // 内核中间加一个 ep 对象，把所有需要监听的 socket 都放到 ep 对象中。这里的 size 并不是限制了epoll所能监听的描述符最大个数，只是对内核初始分配内部数据结构的一个建议值，如果监听的文件描述符数量超过 size, 则内核会自动扩容。
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event); // epoll_ctl 负责把 socket 增加、删除到内核红黑树
+int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);// epoll_wait 负责检测可读队列，没有可读 socket 则阻塞进程</pre></td></tr></table>
+</div>
+</div>
+<p>epoll 于 Linux 2.5.44 首度登场，它是 select/poll 的增强版本。epoll 通过红黑树和双链表数据结构并结合回调机制，使得它的时间复杂度只有O(log n)（注：select/poll 的时间复杂度为O(n)）。</p>
+
+<p>当某个进程调用 epoll_create 方法时，在 Linux 内核中会创建一个 eventpoll 结构体并返回一个 epoll 文件描述符。eventpoll 结构体用于存放通过 epoll_ctl 方法向 epoll 对象中添加进来的事件，这些事件会被挂载在红黑树中并注册一个回调函数（ep_poll_callback），当相应的事件触发时就会调用这个回调方法并将发生的事件添加到就绪链表（rdlist）中。epoll_wait 方法用于检查是否有事件发生，也就是检查 eventpoll 的就绪链表中是否为空，如果 rdlist 不为空，则把发生的事件从内核态复制到用户态，并将事件数量返回给用户进程。</p>
+
+<p><strong>epoll 优点：</strong></p>
+
+<ul>
+<li>没有描述符的限制，能打开的 fd 上限远大于 1024（1G的内存理论上能监听约10万个端口）。</li>
+<li>区别于轮询的方式，只有当事件触发的时候 fd 才会调用 callback 函数，也就是说 epoll 只会管“活跃”的链接，而跟连接总数无关。因此在实际的网络环境中，epoll 的效率会远远高于 select/poll。</li>
+</ul>
+
+<p><strong>epoll 缺点:</strong></p>
+
+<ul>
+<li>只能在 Linux 下工作，属于 Linux 特有。</li>
+</ul>
+
+<p><strong>epoll LT 与 ET 模式的区别：</strong></p>
+
+<p>epoll 有 LT（状态触发）和 ET（边沿触发）两种触发模式，LT 是默认的模式，而 ET 可以理解为“高速”模式。</p>
+
+<ul>
+<li>LT 模式下，只要这个 fd 还有数据可读，每次 epoll_wait 都会返回它的事件，提示用户进程去操作。</li>
+<li>ET 模式下，epoll_wait 仅会在新的事件首次被加入epoll队列时返回，它只会提示一次，无论 fd 中是否还有数据可读。所以在 ET 模式下，read 一个 fd 的时候一定要把它的 buffer 读完，或者遇到 EAGIN 错误。</li>
+</ul>
+
+<blockquote>
+<p>举例来说，假设我们注册了一个读事件到 epoll 实例上，epoll 实例会通过 epoll_wait 返回值的形式通知我们哪些读事件已经就绪。简单来说，在LT模式下，如果读事件未被处理，该事件对应的内核缓冲区非空，则每次调用 epoll_wait 时返回的事件列表都会包含该事件，直到该事件对应的内核读缓冲区为空。而在ET模式下，读事件就绪后只会通知一次，不会反复通知。</p>
+</blockquote>
+
+<h3 id="select-poll-epoll-区别">select、poll、epoll 区别</h3>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>select</th>
+<th>poll</th>
+<th>epoll</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>操作方式</td>
+<td>遍历</td>
+<td>遍历</td>
+<td>回调</td>
+</tr>
+
+<tr>
+<td>数据结构</td>
+<td>bitmap</td>
+<td>链表数组</td>
+<td>红黑树</td>
+</tr>
+
+<tr>
+<td>最大连接数</td>
+<td>1024</td>
+<td>无上限</td>
+<td>无上限</td>
+</tr>
+
+<tr>
+<td>fd拷贝方式</td>
+<td>每次调用select，都需要把fd集合从用户态拷贝到内核态</td>
+<td>每次调用poll，都需要把fd集合从用户态拷贝到内核态</td>
+<td>fd首次调用epoll_ctl拷贝，每次调用epoll_wait不拷贝</td>
+</tr>
+
+<tr>
+<td>工作模式</td>
+<td>LT</td>
+<td>LT</td>
+<td>支持ET高效模式</td>
+</tr>
+
+<tr>
+<td>工作效率</td>
+<td>每次调用都进行线性遍历，时间复杂度为O(n)</td>
+<td>每次调用都进行线性遍历，时间复杂度为O(n)</td>
+<td>事件通知方式，每当fd就绪，系统注册的回调函数就会被调用，将就绪fd放到readyList里面，时间复杂度O(1)</td>
+</tr>
+</tbody>
+</table>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">RickyLin7</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        2021-07-27
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/i/o/">I/O</a>
+          <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>
+          <a href="/tags/linux/">Linux</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/io-mode-analysis/">
+            <span class="next-text nav-default">I/O模式详解</span>
+            <span class="next-text nav-mobile">Next</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="gitalk-container"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+        id: '2021-07-27 19:37:19 \x2b0800 CST',
+        title: 'IO多路复用 - select、poll、epoll',
+        clientID: '857106e549022fc115bb',
+        clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
+        repo: 'rickylin7.github.io',
+        owner: 'RickyLin7',
+        admin: ['RickyLin7'],
+        body: decodeURI(location.href)
+      });
+      gitalk.render('gitalk-container');
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/gitalk/gitalk">comments powered by gitalk.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://github.com/RickyLin7" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    
+    
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2020 - 
+    2021
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">RickyLin7</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.d7b7ada643c9c1a983026e177f141f7363b4640d619caf01d8831a6718cd44ea.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>
