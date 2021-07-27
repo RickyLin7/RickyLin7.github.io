@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Web框架 on moontalk</title>
+    <link>https://blog.moontalk.top/tags/web%E6%A1%86%E6%9E%B6/</link>
+    <description>Recent content in Web框架 on moontalk</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 27 Jul 2021 19:43:54 +0800</lastBuildDate>
+    
+	<atom:link href="https://blog.moontalk.top/tags/web%E6%A1%86%E6%9E%B6/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Tornado源码分析(1) - Configurable</title>
+      <link>https://blog.moontalk.top/post/tornado-code-analysis-1/</link>
+      <pubDate>Tue, 27 Jul 2021 19:43:54 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/tornado-code-analysis-1/</guid>
+      <description>注：本文所分析 tornado 源码版本为 4.5.3 tornado.ioloop.IOLoop.instance().start()，这是 tornado 框架启动“事件循环”的标</description>
+    </item>
+    
+  </channel>
+</rss>
