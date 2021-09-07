@@ -6,10 +6,19 @@
     <description>Recent content on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 27 Jul 2021 19:53:12 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 07 Sep 2021 19:26:25 +0800</lastBuildDate>
     
 	<atom:link href="https://blog.moontalk.top/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>为什么需要Pod</title>
+      <link>https://blog.moontalk.top/post/why-pod/</link>
+      <pubDate>Tue, 07 Sep 2021 19:26:25 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/why-pod/</guid>
+      <description>Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高</description>
+    </item>
     
     <item>
       <title>Tornado源码分析(3) - 协程</title>
