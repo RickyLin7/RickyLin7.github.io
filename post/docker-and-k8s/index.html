@@ -172,17 +172,17 @@
 
 <p><strong>PaaS 项目被大家接纳的一个主要原因，就是它提供了一种名叫“应用托管”的能力，像 Cloud Foundry 这样的 PaaS 项目，最核心的组件就是一套应用的打包和分发机制。</strong></p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr4epnyatj318r0k00vo.jpg" alt="PaaS" /></p>
+<p><img src="/media/16318036042056.jpg" alt="" /></p>
 
 <p>在关于如何定义应用这个问题上，Cloud Foundry 给出的答案是 Buildpack，它是一个应用可运行文件（比如 WAR 包）的封装，然后在里面内置了 Cloud Foundry 可以识别的启动和停止脚本，以及配置信息。然而这个<strong>应用的打包工作却成为了所有用户的痛点</strong>，这个打包过程，没有任何章法可循，更麻烦的是，明明在本地运行得好好的应用，却需要做很多修改和配置工作才能在 PaaS 里运行起来。而这些修改和配置，并没有什么经验可以借鉴，基本上得靠不断试错，摸清门路才能成功部署。所以所谓的“一键部署”只是听上去很美好，前期的打包工作足以让人吐血，而这个痛点也正是 Docker 项目后来能够迅速崛起的关键原因。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr4fv6vo8j318a0lxn2k.jpg" alt="deploy" /></p>
+<p><img src="/media/16318036195385.jpg" alt="" /></p>
 
 <h3 id="docker进场">Docker进场</h3>
 
 <p>2013年，当时名为 dotCloud 的公司（后来更名为 Docker）宣布开源自己的容器项目 Docker。当时这个决定并没有引来多少关注。Cloud Foundry 的首席产品经理在经过仔细对比之后，告诉用户 Docker 也只是一个使用 LXC 技术实现的“沙盒”而已，跟 Cloud Foundry 底层的容器并没有太大不同。然而偏偏是剩下的一小部分不一样的功能，帮助 Docker 项目完成了对其他 PaaS 平台的“降维打击”，这个功能就是 <strong>Docker 镜像</strong>。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr4hzbb69j318a0nxai6.jpg" alt="docker-img" /></p>
+<p><img src="/media/16318036343359.jpg" alt="" /></p>
 
 <p>我在上面提到过，Buildpack 的打包工作是 PaaS 用户的痛点，<strong>因为它无法很好的处理云端虚拟机和本地环境不一致的问题</strong>，而 Docker 镜像恰恰解决了打包这个根本性的问题。Docker 项目通过容器镜像，直接将一个应用运行所需的完整环境，<strong>即：整个操作系统的文件系统也打包了进去</strong>，这也就意味着，Docker 镜像保证了本地环境和云端环境的高度一致，真正意义上的实现了“一次发布，随处运行”。比起 Cloud Foundry 的 Buildpack，高下立判。</p>
 
@@ -192,15 +192,15 @@
 
 <p>2014年，得益于 Docker 为代表的容器化技术的成熟和 devops 文化的兴起，微服务的理念被提出。简单来说，微服务架构就是将复杂臃肿的单体应用进行细粒度的服务化拆分，每个拆分出来的服务各自独立打包部署，并交由小团队进行开发和运维，从而极大地提高应用交付的效率。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr49t4r59j31en0u0jxz.jpg" alt="microservice" /></p>
+<p><img src="/media/16318036548596.jpg" alt="" /></p>
 
 <p>微服务拆分后相比于传统的单体应用带来了两个问题，<strong>一个是测试和发布工作量的提升，另一个是在弹性扩缩容时不同微服务所要求的软件运行环境差异带来的机器初始化复杂度的提升。</strong>而 Docker 镜像对软件运行环境的完美封装正好解决了这两个问题，可以说容器化技术天生就是为微服务而生，容器技术天然要求应用的“微服务化”和“单一职责化”，两者完美契合。（“微服务为什么要容器化”的答案）</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr4vepwamj31hd0lrjwc.jpg" alt="microservice-docker" /></p>
+<p><img src="/media/16318036749038.jpg" alt="" /></p>
 
 <p>然而微服务容器化后又带来了新的挑战，那就是应用容器如何运维的问题。<strong>在整个微服务架构中，容器充其量也只是个微服务交付工具，在如何定义和管理应用这个更为上层的问题上，容器技术并不是“银弹”。</strong>所以兜兜转转，大家还是得走回 PaaS 化的道路，依旧需要一个强大的编排和管理应用的平台。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr4p01p60j31ln0negs7.jpg" alt="" /></p>
+<p><img src="/media/16318036924618.jpg" alt="" /></p>
 
 <h3 id="k8s接管比赛">K8S接管比赛</h3>
 
@@ -216,7 +216,7 @@
 
 <p>正是因为这样的出发点，让 Kubernetes 从一开始就避免了与 Docker Swarm 和 Mesos 社区同质化。<strong>Kubernetes 把容器进行组合，用 Pod 的概念来模拟进程组的行为。坚持用声明式 API 加控制器模型来进行应用编排，用 API 资源对象的创建与更新（PATCH）来驱动整个系统的持续运转。</strong>相比于 Docker 体系以“单一容器”为核心的应用定义方式，Kubernetes 项目则提出了一整套容器化设计模式和对应的控制模型。更确切的说，有了 Pod 和容器设计模式，我们的应用基础设施才能够与应用（而不是容器）进行交互和响应的能力，实现了“云”与“应用”的直接对接。而有了声明式 API，我们的应用基础设施才能真正同下层资源、调度、编排、网络、存储等云的细节与逻辑进行解耦。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grr5g3am0bj31hc0u07ag.jpg" alt="" /></p>
+<p><img src="/media/16318037114898.jpg" alt="" /></p>
 
 <p>这些“超前”的设计思想是 Google 公司在容器化基础设施领域多年来实践经验的沉淀与升华，它帮助 Kubernetes 项目很快就构建出了一个与众不同的容器编排与管理的生态，将其竞争对手远远甩在身后。</p>
 

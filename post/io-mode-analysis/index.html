@@ -185,7 +185,7 @@
 
 <p>以 Linux 操作系统为例，将最高的1G字节（从虚拟地址0xC0000000到0xFFFFFFFF）供内核使用，称为内核空间（内核空间被所有进程共享），而将较低的3G字节（从虚拟地址0x00000000到0xBFFFFFFF）供各个进程使用，称为用户空间。空间分配如下图所示：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs5x94fmlzj30gm093aak.jpg" alt="" /></p>
+<p><img src="/media/16318030603522.jpg" alt="" /></p>
 
 <h3 id="进程切换">进程切换</h3>
 
@@ -202,7 +202,7 @@
 <li>恢复处理机上下文。</li>
 </ol>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grwss6owyoj30v40kydiw.jpg" alt="" /></p>
+<p><img src="/media/16318030842245.jpg" alt="" /></p>
 
 <blockquote>
 <p>进程控制块（英语：Process Control Block，PCB）是操作系统核心中一种数据结构，PCB中记录了操作系统所需的，用于描述进程的当前情况以及控制进程运行的全部信息。每一个进程均有一个PCB，在创建进程时，建立PCB，伴随进程运行的全过程，直到进程撤消而撤消。</p>
@@ -214,7 +214,7 @@
 
 <p>正在执行的进程，由于期待的某些事件未发生，如请求系统资源失败、等待某种操作的完成、新数据尚未到达或无新工作做等，则由系统自动执行阻塞原语（Block），使自己由运行状态变为阻塞状态。可见，进程的阻塞是进程自身的一种主动行为，因此只有处于运行态的进程（获得CPU），才可能将其转为阻塞状态。<strong>当进程进入阻塞状态，是不占用CPU资源的。</strong></p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0lsj38a4j30sq0lcq7w.jpg" alt="" /></p>
+<p><img src="/media/16318031064139.jpg" alt="" /></p>
 
 <h3 id="文件描述符与socket">文件描述符与socket</h3>
 
@@ -222,7 +222,7 @@
 
 <p>文件描述符（file descriptor）是操作系统内核为了高效管理已被打开的文件所创建的索引，用于指代被打开的文件。在linux操作系统中，每一个进程中都有一个文件描述符表，它是一个指针数组，系统默认初始化了数组的前3位。第0位指向标准的输入流（一般是键盘），第1位指向标准的输出流（一般是显示器），第2位指向标准的错误流（一般是也显示器）。我们可以用命令<code>ls -l /proc/$$/fd</code>查看一下当前<code>bash</code>的文件描述符:</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0l9ivxabj30ws05wt9t.jpg" alt="" /></p>
+<p><img src="/media/16318031347078.jpg" alt="" /></p>
 
 <p>socket又叫网络套接字，它也是一个文件，如果一个进程创建了一个socket，那么这个进程的文件描述符列表中就会有一个指向socket的指针。我们可以执行如下命令进行验证：</p>
 <div class="highlight"><div class="chroma">
@@ -240,14 +240,14 @@ exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
 &lt;&gt; 是重定向，&lt; 表示是输入流，&gt; 表示输出流，意思是 /dev/tcp/www.baidu.com/80 这个文件的文件描述符重定向到5（或者是这个文件的输入输出流执行文件描述符5），根据文件描述符5可以得到这个文件的输入输出流</p>
 </blockquote>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0letxiz3j30yg08mgnm.jpg" alt="" /></p>
+<p><img src="/media/16318031596734.jpg" alt="" /></p>
 
 <h3 id="缓存i-o">缓存I/O</h3>
 
 <p>缓存I/O被称作为标准I/O，大多数文件系统的默认I/O操作都是缓存I/O。
 缓存I/O的数据传输模式：从磁盘先通过 DMA 模式（直接内存访问，是一种不经过CPU而直接从内存里存取数据的数据交换模式）拷贝到内核空间高速缓存页，再从高速缓存页通过CPU拷贝到用户空间应用缓存。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grwt6adhhzj30pr0ig76p.jpg" alt="" /></p>
+<p><img src="/media/16318031807235.jpg" alt="" /></p>
 
 <p>缓存I/O的缺点：数据传输过程中需要在应用程序地址空间（用户空间）和缓存（内核空间）之间进行多次数据拷贝操作，这些拷贝操作会给CPU以及内存带来一定的开销。</p>
 
@@ -276,7 +276,7 @@ exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
 
 <p>在Linux中，默认情况下所有的socket都是blocking，一个典型的读操作流程如下图所示：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0lxn0nbnj30fc097mxl.jpg" alt="" /></p>
+<p><img src="/media/16318031993868.jpg" alt="" /></p>
 
 <p>当用户进程（application）调用 recvfrom 这个系统调用，kernel 开始IO第一阶段：准备数据（对于网络IO来说，很多数据在一开始并没有到达，比如还没有收到一个完整的数据包。此时 kernel 需要等待足够的数据）。这个等待的过程就是数据被拷贝到操作系统内核缓冲区的过程。而在用户进程这边，整个进程会处于阻塞状态（进程主动选择）。当 kernel 等待数据准备完成后执行IO第二阶段，它将数据从 kernel 中拷贝到用户进程（用户空间），然后 kernel 返回结果，用户进程解除阻塞状态重新运行。</p>
 
@@ -288,7 +288,7 @@ exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
 
 <p>在Linux中，可以通过设置socket使其变为non-blocking，non-blocking 的读操作流程如下图所示：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0lyyk6b7j30gr0993z8.jpg" alt="" /></p>
+<p><img src="/media/16318032242851.jpg" alt="" /></p>
 
 <p>当用户进程（application）调用 recvfrom 这个系统调用，如果 kernel 中数据还没有准备就绪，那么它不会 block 用户进程，而是立刻返回 error。从用户进程角度来看，当它发起一个 read 操作后，并不需要等待，而是马上得到了返回结果，然后用户进程发现返回结果是 error，就知道数据还没有准备就绪，于是再次发起 recvfrom 的系统调用。通过这种轮询的机制，一旦 kernel 中的数据准备完成并再次收到用户进程的 system call，那么它就会立马将数据拷贝到用户进程，然后返回结果。</p>
 
@@ -300,7 +300,7 @@ exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
 
 <p>IO 多路复用就是我们常说的 select、poll、epoll，这种IO模式又被称为事件驱动IO（event driven IO）。它的基本原理就是 select、poll、epoll 这个 function 会不断的轮询所负责的所有 socket，当某个 socket 有数据到达了，就通知用户进程。select 和 epoll 的优点在于通过单个 process 就可以同时处理多个网络连接IO。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0m034im5j30gx092dgg.jpg" alt="" /></p>
+<p><img src="/media/16318032478392.jpg" alt="" /></p>
 
 <p>当用户进程调用了 select，整个进程会处于 block 状态，与此同时，kernel 会“监视”所有 select 负责的 socket，当其中任何一个 socket 中的数据准备就绪，select 就会返回，此时用户进程再调用 read 操作，将数据从 kernel 拷贝到用户进程。</p>
 
@@ -316,7 +316,7 @@ exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
 
 <p>Linux提供了AIO库函数实现异步，但是用的很少。目前有很多开源的异步IO库，例如libevent、libev、libuv。异步IO流程如下图所示：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs0m0il5m5j30fw090wey.jpg" alt="" /></p>
+<p><img src="/media/16318032656253.jpg" alt="" /></p>
 
 <p>用户进程发起 read 操作后立刻就可以去做其他事情。从 kernel 角度来看，当它收到 asynchronous read 的系统调用后立刻返回，这样就不会对用户进程产生任何 block。然后 kernel 会等待数据准备完成，再将数据拷贝到用户进程，当这些流程都完成后，kernel 会给用户进程发送一个 signal，通知用户进程它的 read 操作完成了。</p>
 
@@ -328,7 +328,7 @@ exec 5&lt;&gt; /dev/tcp/www.baidu.com/80</pre></td></tr></table>
 
 <p>各个 IO 模型的比较如图所示：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1gs2p5qyqrcj30h2093js8.jpg" alt="" /></p>
+<p><img src="/media/16318032958716.jpg" alt="" /></p>
 
 <h4 id="blocking-io-和-nonblocking-io-区别">Blocking IO 和 Nonblocking IO 区别</h4>
 

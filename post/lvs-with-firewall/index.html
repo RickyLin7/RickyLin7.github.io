@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2020-05-24T21:19:54&#43;08:00" />
 <meta itemprop="dateModified" content="2020-05-24T21:19:54&#43;08:00" />
-<meta itemprop="wordCount" content="2967">
+<meta itemprop="wordCount" content="2962">
 
 
 
@@ -204,7 +204,7 @@
  <center>
     <img style="border-radius: 0.3125em;
     box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
-    src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61izdxpsj30s40et76g.jpg">
+    src="/media/16318037626198.jpg">
     <br></br>
     <div style="color:orange; border-bottom: 1px solid #d9d9d9;
     display: inline-block;
@@ -214,16 +214,19 @@
 
 <h3 id="三-问题描述">三、问题描述</h3>
 
-<p>集群部署完成后，访问 VIP:PORT 遭到拒绝（Connection refused）。
-<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61jp0lufj30vy04cabe.jpg" alt="" /></p>
+<p>集群部署完成后，访问 VIP:PORT 遭到拒绝（Connection refused）。</p>
 
-<p>直接访问 RS1:PORT 和 RS2:PORT 均可以正常访问 Nginx 服务（由于我未写入index.html，所以返回404页面是正常现象）。
-<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61k9yq5hj30vi0g2tb0.jpg" alt="" /></p>
+<p><img src="/media/16318037927406.jpg" alt="" /></p>
+
+<p>直接访问 RS1:PORT 和 RS2:PORT 均可以正常访问 Nginx 服务（由于我未写入index.html，所以返回404页面是正常现象）。</p>
+
+<p><img src="/media/16318038335583.jpg" alt="" /></p>
 
 <h3 id="四-排查流程">四、排查流程</h3>
 
-<p><strong>①</strong> 关闭 DS 防火墙，未解决问题。恢复开启 DS 防火墙后，再尝试关闭 RS1 防火墙，RS1 服务正常返回，RS2 依旧是连接拒绝。
-<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61kmjojmj30ju094dh9.jpg" alt="" /></p>
+<p><strong>①</strong> 关闭 DS 防火墙，未解决问题。恢复开启 DS 防火墙后，再尝试关闭 RS1 防火墙，RS1 服务正常返回，RS2 依旧是连接拒绝。</p>
+
+<p><img src="/media/16318038523733.jpg" alt="" /></p>
 
 <p>猜测 <strong>Client → DS</strong> 这条链路是正常的，问题出现在 <strong>DS → RS</strong> 这条链路上。</p>
 
@@ -234,21 +237,33 @@
 对于 TCP 协议而言，ActiveConn 列是活动连接数，也就是tcp连接状态的 ESTABLISHED ，而 InActConn 列是指除了 ESTABLISHED 以外的，所有的其它状态的 tcp 连接。</p>
 </blockquote>
 
-<p>当前 InActConn 和 ActiveConn 均为0。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61l1rmzjj30hi0430ta.jpg" alt="" /></p>
+<p>当前 InActConn 和 ActiveConn 均为0。</p>
 
-<p>在 Client 端继续使用命令<code>for i in {1..100}; do curl 10.1.61.82:80; sleep 0.5; done</code>循环请求 VIP:PORT，然后在 DS 上使用命令<code>ipvsadm -L -n</code>再次查看连接状态。发现 InActConn 数值发生了改变，说明 DS 是收到了 Client 端的数据包的，ActiveConn 为0是因为 <strong>DS → RS</strong> 被拒，所以 tcp 连接未能建立。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61lf3avfj30ho044dgf.jpg" alt="" /></p>
+<p><img src="/media/16318038877302.jpg" alt="" /></p>
+
+<p>在 Client 端继续使用命令<code>for i in {1..100}; do curl 10.1.61.82:80; sleep 0.5; done</code>循环请求 VIP:PORT，然后在 DS 上使用命令<code>ipvsadm -L -n</code>再次查看连接状态。发现 InActConn 数值发生了改变，说明 DS 是收到了 Client 端的数据包的，ActiveConn 为0是因为 <strong>DS → RS</strong> 被拒，所以 tcp 连接未能建立。</p>
+
+<p><img src="/media/16318039187954.jpg" alt="" /></p>
 
 <p>目前已定位到数据包出现问题的链路是在 <strong>DS → RS</strong> ，OK，那就抓个包看看呗。</p>
 
-<p><strong>③</strong> 在DS上使用命令<code>tcpdump -i any host 10.1.62.105</code>截获 RS1 收到和发出的所有数据包（在 Client 依然用老方法循环请求 VIP:PORT ），可以看到 DS 发给 RS1 的数据包被 RS1 用一个协议为 ICMP 的数据包拒绝了。等等，这个数据包的内容咋这么眼熟（ICMP host prohibited），好像用 iptables 查看规则时见过。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61uqns5rj30yg05f0vh.jpg" alt="" /></p>
+<p><strong>③</strong> 在DS上使用命令<code>tcpdump -i any host 10.1.62.105</code>截获 RS1 收到和发出的所有数据包（在 Client 依然用老方法循环请求 VIP:PORT ），可以看到 DS 发给 RS1 的数据包被 RS1 用一个协议为 ICMP 的数据包拒绝了。等等，这个数据包的内容咋这么眼熟（ICMP host prohibited），好像用 iptables 查看规则时见过。</p>
 
-<p><strong>④</strong> 我马上登陆到RS1，直接用命令<code>iptables --line -vnL INPUT</code>查看 INPUT 链中的规则（<code>--line</code>可显示规则的编号，数据包在链中是顺着规则编号往下逐步匹配的；<code>-v</code>显示详细信息；<code>-n</code>不解析IP地址；<code>-L</code>指定链名；不指定<code>-t</code>默认显示 filter 表）。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61vcxdqvj30yg063q4m.jpg" alt="" /></p>
+<p><img src="/media/16318039522812.jpg" alt="" /></p>
+
+<p><strong>④</strong> 我马上登陆到RS1，直接用命令<code>iptables --line -vnL INPUT</code>查看 INPUT 链中的规则（<code>--line</code>可显示规则的编号，数据包在链中是顺着规则编号往下逐步匹配的；<code>-v</code>显示详细信息；<code>-n</code>不解析IP地址；<code>-L</code>指定链名；不指定<code>-t</code>默认显示 filter 表）。</p>
+
+<p><img src="/media/16318039736728.jpg" alt="" /></p>
 
 <p>可以看到第七条 REJECT 规则就是用 icmp-host-prohibited 作为数据包内容拒绝的。啊哈？DS 发给 RS1 的数据包被最后一条规则匹配到了？为什么没被前面的规则处理掉？我不是开启了80端口吗？</p>
 
-<p><strong>⑤</strong> 虽然一堆疑问，不过还是先确认下 DS 发给 RS1 的数据包是不是真被第七条规则匹配处理了。这里我采用的方法是，在 Client 端循环请求 VIP:PORT 的前后分别用命令<code>iptables --line -vnL INPUT</code>查看第七条规则的 pkts（该规则匹配到的数据包数量）数值是否发生了变化，果然 pkts 发生了增长，说明数据包真的是被第七条规则匹配到并且 REJECT 掉了。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61vromq7j30yg0cygp3.jpg" alt="" /></p>
+<p><strong>⑤</strong> 虽然一堆疑问，不过还是先确认下 DS 发给 RS1 的数据包是不是真被第七条规则匹配处理了。这里我采用的方法是，在 Client 端循环请求 VIP:PORT 的前后分别用命令<code>iptables --line -vnL INPUT</code>查看第七条规则的 pkts（该规则匹配到的数据包数量）数值是否发生了变化，果然 pkts 发生了增长，说明数据包真的是被第七条规则匹配到并且 REJECT 掉了。</p>
 
-<p>额，我用命令<code>iptables --line -vnL</code>查看了所有 Chain(链) 的规则，找到我开放80端口的那两条规则又确认了一下，发现 dport 是80，协议为 tcp 的那条规则 pkts 一直是0，并没有变化（这条规则在 INPUT 链中是被第五条规则匹配的，规则虽然是在 IN_public_allow 链的，但了解过 iptables 自定义链相关知识后，就会明白这实际上是一个调用链的关系：<strong>INPUT_ZONES → IN_public → IN_public_allow</strong>，从下图的每个 Chain 的 target 也能看出来）。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61w99vk7j30yg0eq421.jpg" alt="" /></p>
+<p><img src="/media/16318039953702.jpg" alt="" /></p>
+
+<p>额，我用命令<code>iptables --line -vnL</code>查看了所有 Chain(链) 的规则，找到我开放80端口的那两条规则又确认了一下，发现 dport 是80，协议为 tcp 的那条规则 pkts 一直是0，并没有变化（这条规则在 INPUT 链中是被第五条规则匹配的，规则虽然是在 IN_public_allow 链的，但了解过 iptables 自定义链相关知识后，就会明白这实际上是一个调用链的关系：<strong>INPUT_ZONES → IN_public → IN_public_allow</strong>，从下图的每个 Chain 的 target 也能看出来）。</p>
+
+<p><img src="/media/16318040143948.jpg" alt="" /></p>
 
 <p>再次确认下，这条规则源地址、目标地址、端口、协议等等都没有问题，而且最开始我也直接访问 RS1:PORT 确认过 Nginx 服务是没有问题的，可以正常返回，所以我怀疑从 <strong>DS → RS1</strong> 的数据包并不是一个 tcp 包，所以没有被此规则匹配并处理。</p>
 
@@ -258,17 +273,25 @@
 <p>ipvs 工作在 INPUT 链，它在原有的 IP 报文外再次封装多一层 IP 头，内部 IP 头 (源地址为 CIP，目标 IP 为 VIP)，外层 IP 头 (源地址为 DIP，目标 IP 为 RIP)，然后将封装好的数据包从 DS 发往 RS 。</p>
 </blockquote>
 
-<p>到这，我已经恍然大悟了，它确实不是一个 tcp 包，再翻到之前从 DS 上抓取 RS1 的数据包内容，可以看到 <strong>DS → RS1</strong> 的数据包协议为 ipip-proto-4。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61wl9i4rj30yg05eq5o.jpg" alt="" /></p>
+<p>到这，我已经恍然大悟了，它确实不是一个 tcp 包，再翻到之前从 DS 上抓取 RS1 的数据包内容，可以看到 <strong>DS → RS1</strong> 的数据包协议为 ipip-proto-4。</p>
 
-<p><strong>⑦</strong> 所以，处理方法也很明确了，放行这个 ipip 协议的数据包。我的处理方法是在 RS1 上使用命令<code>iptables -t filter -I INPUT -p ipv4 -j ACCEPT</code>增加一条对所有协议类型为 ipip 的数据包ACCEPT的规则（这里的 prot 显示的 4 代表 ipv4 的协议号，想要查看协议名与协议号的对应关系可以在这里查找 <a href="https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml">Protocol Numbers</a>）。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61x3z66yj30yg07djtj.jpg" alt="" /></p>
+<p><img src="/media/16318040438429.jpg" alt="" /></p>
 
-<p>记住一定要在 INPUT 链第七条之前，我这里是直接插入到了第一条，我之前看一篇博文上用的是<code>-A INPUT</code>，这表示 append(追加) 一条规则，会出现在最后，这样设置的规则数据包根本就匹配不到，因为它已经被在你前面的那条REJECT规则匹配并拒绝掉了。</p>
+<p><strong>⑦</strong> 所以，处理方法也很明确了，放行这个 ipip 协议的数据包。我的处理方法是在 RS1 上使用命令<code>iptables -t filter -I INPUT -p ipv4 -j ACCEPT</code>增加一条对所有协议类型为 ipip 的数据包ACCEPT的规则（这里的 prot 显示的 4 代表 ipv4 的协议号，想要查看协议名与协议号的对应关系可以在这里查找 <a href="https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml">Protocol Numbers</a>）。</p>
 
-<p><strong>⑧</strong> 最后我们再从 Client 端请求验证一下规则是否生效，可以看到 RS1 已经正常返回了，且 RS1 上的第一条规则 pkts 也发生了增长，说明数据包已被匹配且正确处理。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61xgllhmj30x00ia0wc.jpg" alt="" />
-<br></br>
-<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61xvfkgvj30yg06uabx.jpg" alt="" /></p>
+<p><img src="/media/16318040647713.jpg" alt="" /></p>
 
-<p>RS2 也设置相同的过滤规则，然后再次验证，两台 RS 均正常返回，over。<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gf61yincboj30ve0e6gnw.jpg" alt="" /></p>
+<p>记住一定要在 INPUT 链第七条之前，我这里是直接插入到了第一条，我之前看一篇博文上用的是<code>-A INPUT</code>，这表示 append(追加) 一条规则，会出现在最后，这样设置的规则数据包根本就匹配不到，因为它已经被在你前面的那条 REJECT 规则匹配并拒绝掉了。</p>
+
+<p><strong>⑧</strong> 最后我们再从 Client 端请求验证一下规则是否生效，可以看到 RS1 已经正常返回了，且 RS1 上的第一条规则 pkts 也发生了增长，说明数据包已被匹配且正确处理。</p>
+
+<p><img src="/media/16318041273948.jpg" alt="" /></p>
+
+<p><img src="/media/16318041440259.jpg" alt="" /></p>
+
+<p>RS2 也设置相同的过滤规则，然后再次验证，两台 RS 均正常返回，over。</p>
+
+<p><img src="/media/16318041701126.jpg" alt="" /></p>
 
 <h3 id="五-回顾总结">五、回顾总结</h3>
 

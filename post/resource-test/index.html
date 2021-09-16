@@ -210,11 +210,11 @@ $ chroot newroot /bin/pwd
 </div>
 <p>测试mkdir、rm命令，发现命令运行正常，并且仅作用于newroot目录下。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grs7y75jbaj60w603twey02.jpg" alt="" /></p>
+<p><img src="/media/16318033614710.jpg" alt="" /></p>
 
 <p>现在删除newroot目录下rm命令的二进制执行文件，然后再次使用chroot命令测试。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grs7ymcrzyj60tf03tq3g02.jpg" alt="" /></p>
+<p><img src="/media/16318033835380.jpg" alt="" /></p>
 
 <p>可以发现jail环境下已经无法再运行rm命令，验证了chroot命令的限制条件。</p>
 
@@ -289,13 +289,13 @@ if __name__ == &#39;__main__&#39;:
 </div>
 <p>运行脚本，内存限制为330MB，父进程和子进程各分配200MB内存。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtbzybf0ej30ic01yq38.jpg" alt="" /></p>
+<p><img src="/media/16318034021035.jpg" alt="" /></p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtbyvh9crj30j001v0sy.jpg" alt="" /></p>
+<p><img src="/media/16318034235659.jpg" alt="" /></p>
 
 <p>发现两个进程都使用了200M内存，若调大任意一个进程的内存，该进程会抛出<code>memory error</code>，另一个进程正常运行。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtc8eg1njj30gt05bwf8.jpg" alt="" /></p>
+<p><img src="/media/16318034525831.jpg" alt="" /></p>
 
 <p>说明内存限制仅针对单个进程，子进程会继承父进程的资源限制条件，用表达式可以表示为<code>limit=P1=P2=…</code>。</p>
 
@@ -376,9 +376,9 @@ $ cgset -r cpu.shares=512 cpulimited</pre></td></tr></table>
 </div>
 <p>使用cgexec命令来启动控制组的运行。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtd3yl597j30pz03vgm2.jpg" alt="" /></p>
+<p><img src="/media/16318034806866.jpg" alt="" /></p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtd47pxtej30p102rjru.jpg" alt="" /></p>
+<p><img src="/media/16318035039054.jpg" alt="" /></p>
 
 <p>发现两个控制组的CPU占用率确实为2：1。然后再来看cpulimited控制组下的两个进程，可以发现各占用了16.6%，说明cgroup的资源限制是作用于该控制组下的所有进程的，用表达式可以表示为<code>limit=p1+p2+...</code>。</p>
 
@@ -420,13 +420,13 @@ def use_memory(size, subsize):
 </div>
 <p>创建控制组并配置200M内存的资源限制。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtd4htd7zj30q201d74d.jpg" alt="" /></p>
+<p><img src="/media/16318035268968.jpg" alt="" /></p>
 
 <p>给两个进程各分配200M的内存并使用cgexec命令来启动控制组的运行。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtd4s81a6j30ny01zt8w.jpg" alt="" /></p>
+<p><img src="/media/16318035539786.jpg" alt="" /></p>
 
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNly1grtd50qoo4j30p3021dg2.jpg" alt="" /></p>
+<p><img src="/media/16318035721393.jpg" alt="" /></p>
 
 <p><font color="#dd0000"><strong>注：此处代码里 parent process 和 child process 的输出写反了，导致父子进程号显示相反，不影响整体结果</strong></font></p>
 
