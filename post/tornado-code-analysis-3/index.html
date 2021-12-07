@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.59.1 with theme even" />
+<meta name="generator" content="Hugo 0.89.4 with theme even" />
 
 
 <link rel="canonical" href="https://blog.moontalk.top/post/tornado-code-analysis-3/" />
@@ -35,28 +35,22 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.c5c7c6e13305371a90e1e1d9469de50ab9055253f722c6719157747c6532bb01.css" rel="stylesheet">
+<link href="/sass/main.min.698b45f22722579088fe87bfd0e2dd1ca078c05594c8d33ce7b82b5733f75032.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
 <meta property="og:title" content="Tornado源码分析(3) - 协程" />
 <meta property="og:description" content="注：本文所分析 tornado 源码版本为 4.5.3 Future 对象 Future 对象可以简单的理解为一个异步操作的占位符，Future 对象有以下几个特性： 包含了很多属性，包括 _result 和 _ca" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://blog.moontalk.top/post/tornado-code-analysis-3/" />
+<meta property="og:url" content="https://blog.moontalk.top/post/tornado-code-analysis-3/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-07-27T19:53:12+08:00" />
 <meta property="article:modified_time" content="2021-07-27T19:53:12+08:00" />
+
 <meta itemprop="name" content="Tornado源码分析(3) - 协程">
-<meta itemprop="description" content="注：本文所分析 tornado 源码版本为 4.5.3 Future 对象 Future 对象可以简单的理解为一个异步操作的占位符，Future 对象有以下几个特性： 包含了很多属性，包括 _result 和 _ca">
-
-
-<meta itemprop="datePublished" content="2021-07-27T19:53:12&#43;08:00" />
-<meta itemprop="dateModified" content="2021-07-27T19:53:12&#43;08:00" />
+<meta itemprop="description" content="注：本文所分析 tornado 源码版本为 4.5.3 Future 对象 Future 对象可以简单的理解为一个异步操作的占位符，Future 对象有以下几个特性： 包含了很多属性，包括 _result 和 _ca"><meta itemprop="datePublished" content="2021-07-27T19:53:12+08:00" />
+<meta itemprop="dateModified" content="2021-07-27T19:53:12+08:00" />
 <meta itemprop="wordCount" content="1627">
-
-
-
-<meta itemprop="keywords" content="Tornado,Python,Web框架," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="Tornado,Python,Web框架," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Tornado源码分析(3) - 协程"/>
 <meta name="twitter:description" content="注：本文所分析 tornado 源码版本为 4.5.3 Future 对象 Future 对象可以简单的理解为一个异步操作的占位符，Future 对象有以下几个特性： 包含了很多属性，包括 _result 和 _ca"/>
 
@@ -136,42 +130,34 @@
   <h2 class="post-toc-title">Contents</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#future-对象">Future 对象</a></li>
-<li><a href="#gen-coroutine-装饰器">gen.coroutine 装饰器</a></li>
-<li><a href="#runner-类">Runner() 类</a></li>
-<li><a href="#总结">总结</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#future-对象">Future 对象</a></li>
+        <li><a href="#gencoroutine-装饰器">gen.coroutine 装饰器</a></li>
+        <li><a href="#runner-类">Runner() 类</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<blockquote>
+      <blockquote>
 <p><em>注：本文所分析 tornado 源码版本为 4.5.3</em></p>
 </blockquote>
-
 <h3 id="future-对象">Future 对象</h3>
-
 <p>Future 对象可以简单的理解为一个异步操作的占位符，Future 对象有以下几个特性：</p>
-
 <ol>
 <li>包含了很多属性，包括 <code>_result</code> 和 <code>_callbacks</code>，这两个属性分别存储异步操作的结果及回调函数。</li>
 <li>包含了很多方法，比如添加回调函数，设置异步操作结果等。</li>
 <li>当 Future 对象完成对应的异步操作后，该对象会被 <code>set_done</code>，然后遍历运行 <code>_callbacks</code> 中的回调函数。</li>
 </ol>
-
 <p>Future 对象的简化版代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -222,25 +208,25 @@
 </span><span class="lnt">49
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">Future</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">Future</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_done</span> <span class="o">=</span> <span class="bp">False</span>      <span class="c1"># 是否执行结束</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="o">=</span> <span class="bp">None</span>     <span class="c1"># 执行结果</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_done</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># 是否执行结束</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="o">=</span> <span class="kc">None</span>     <span class="c1"># 执行结果</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span> <span class="o">=</span> <span class="p">[]</span>    <span class="c1"># 保存回调函数</span>
 
-    <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="s2">&#34;&#34;&#34;
 </span><span class="s2">        成功返回结果，失败抛出异常
 </span><span class="s2">        &#34;&#34;&#34;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clear_tb_log</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exc_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exc_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">raise_exc_info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_exc_info</span><span class="p">)</span>
             <span class="k">finally</span><span class="p">:</span>
-                <span class="bp">self</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_done</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result</span>
 
@@ -264,19 +250,19 @@
         <span class="s2">&#34;&#34;&#34;
 </span><span class="s2">        标识执行结束并运行回调函数
 </span><span class="s2">        &#34;&#34;&#34;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_done</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_done</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">for</span> <span class="n">cb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">cb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="n">app_log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;Exception in callback </span><span class="si">%r</span><span class="s1"> for </span><span class="si">%r</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span> <span class="o">=</span> <span class="bp">None</span></code></pre></td></tr></table>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_callbacks</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h3 id="gen-coroutine-装饰器">gen.coroutine 装饰器</h3>
+</div><h3 id="gencoroutine-装饰器">gen.coroutine 装饰器</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -342,8 +328,8 @@
 </span><span class="lnt">64
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">replace_callback</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_make_coroutine_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">replace_callback</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">replace_callback</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_make_coroutine_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">replace_callback</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     
 
 <span class="k">def</span> <span class="nf">_make_coroutine_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">replace_callback</span><span class="p">):</span>
@@ -352,7 +338,7 @@
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="s1">&#39;coroutine&#39;</span><span class="p">):</span>
         <span class="n">func</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">coroutine</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 
-    <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">wrapped</span><span class="p">)</span>
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">wrapped</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="s2">&#34;&#34;&#34;
 </span><span class="s2">        简化版代码：
@@ -395,21 +381,20 @@
                     <span class="n">future</span><span class="o">.</span><span class="n">set_exc_info</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">_futures_to_runners</span><span class="p">[</span><span class="n">future</span><span class="p">]</span> <span class="o">=</span> <span class="n">Runner</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">future</span><span class="p">,</span> <span class="n">yielded</span><span class="p">)</span>
-                <span class="n">yielded</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">yielded</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">future</span>
                 <span class="k">finally</span><span class="p">:</span>
-                    <span class="n">future</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="n">future</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">future</span>
 
     <span class="n">wrapper</span><span class="o">.</span><span class="n">__wrapped__</span> <span class="o">=</span> <span class="n">wrapped</span>
-    <span class="n">wrapper</span><span class="o">.</span><span class="n">__tornado_coroutine__</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="k">return</span> <span class="n">wrapper</span></code></pre></td></tr></table>
+    <span class="n">wrapper</span><span class="o">.</span><span class="n">__tornado_coroutine__</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>大致过程如下所示：</p>
-
+</div><p>大致过程如下所示：</p>
 <ol>
 <li>生成一个 Future 对象</li>
 <li>运行被装饰函数并将结果赋值给 result。tornado 的“异步”实现基于 generator，所以一般情况下 result 是一个 generator 对象。</li>
@@ -417,24 +402,18 @@
 <li>Runner(result, future, yielded)。</li>
 <li>return future 返回异步操作对象。</li>
 </ol>
-
 <p>这里需要解析一下第4步中的 Runner() 类都做了些什么。</p>
-
 <h3 id="runner-类">Runner() 类</h3>
-
 <p>Runner() 可以自动的将异步操作结果 <code>send()</code> 至生成器中止的地方。tornado 的协程是基于 generator 实现的，多数情况下存在 generator 的嵌套，比如经常会 <code>yield</code> 一个 generator，当 A 生成器 yield B 生成器时，会执行以下两步：</p>
-
 <ol>
 <li>中止 A 的执行转而执行 B</li>
 <li>当 B 执行完成后，将 B 的执行结果 <code>send()</code> 至 A 中止的地方，恢复执行 A。</li>
 </ol>
-
 <p>而上面这两步过程就是 Runner() 的主要功能：控制生成器的执行与中止，并适时的将 B 的执行结果 <code>send()</code> 至 A ，从而唤醒 A 生成器继续执行。</p>
-
 <p>下面是简化版的 <code>Runner()</code> 代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -514,12 +493,12 @@
 </span><span class="lnt">78
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">Runner</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">Runner</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen</span><span class="p">,</span> <span class="n">result_future</span><span class="p">,</span> <span class="n">first_yielded</span><span class="p">):</span>
         <span class="o">...</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_yield</span><span class="p">(</span><span class="n">first_yielded</span><span class="p">):</span>
-            <span class="n">gen</span> <span class="o">=</span> <span class="n">result_future</span> <span class="o">=</span> <span class="n">first_yielded</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">gen</span> <span class="o">=</span> <span class="n">result_future</span> <span class="o">=</span> <span class="n">first_yielded</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
             
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -529,39 +508,39 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
                 <span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">future</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">future</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
                     <span class="k">return</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">future</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c1"># 清空 self.future</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">future</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># 清空 self.future</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span> <span class="c1"># 获取 future 对象的结果</span>
                     <span class="n">yielded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="c1"># send 结果，并将 self.gen 返回的值赋值给 yielded（一般情况下这也是个future对象）</span>
                 <span class="k">except</span> <span class="p">(</span><span class="ne">StopIteration</span><span class="p">,</span> <span class="n">Return</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">future</span> <span class="o">=</span> <span class="n">_null_future</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_callbacks</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">had_exception</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="n">LeakedCallbackError</span><span class="p">(</span>
                             <span class="s2">&#34;finished without waiting for callbacks </span><span class="si">%r</span><span class="s2">&#34;</span> <span class="o">%</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">pending_callbacks</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">result_future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="n">_value_from_stopiteration</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">result_future</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">result_future</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_deactivate_stack_context</span><span class="p">()</span>
                     <span class="k">return</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">future</span> <span class="o">=</span> <span class="n">_null_future</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">result_future</span><span class="o">.</span><span class="n">set_exc_info</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">result_future</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">result_future</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_deactivate_stack_context</span><span class="p">()</span>
                     <span class="k">return</span>
                 <span class="c1"># 判断 yielded 对象是否执行完成，若已完成则直接返回，否则继续循环</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_yield</span><span class="p">(</span><span class="n">yielded</span><span class="p">):</span>
                     <span class="k">return</span>
-                <span class="n">yielded</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">yielded</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">finally</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">handle_yield</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yielded</span><span class="p">):</span>
         <span class="s2">&#34;&#34;&#34;
@@ -585,17 +564,16 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">future</span><span class="o">.</span><span class="n">done</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">future</span> <span class="ow">is</span> <span class="n">moment</span><span class="p">:</span>
             <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
                 <span class="c1"># Break a reference cycle to speed GC.</span>
-                <span class="n">f</span> <span class="o">=</span> <span class="bp">None</span> <span class="c1"># noqa</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># noqa</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">io_loop</span><span class="o">.</span><span class="n">add_future</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">future</span><span class="p">,</span> <span class="n">inner</span><span class="p">)</span>
         <span class="c1"># 返回 future 对象是否被 done</span>
-            <span class="k">return</span> <span class="bp">False</span>
-        <span class="k">return</span> <span class="bp">True</span></code></pre></td></tr></table>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h3 id="总结">总结</h3>
-
+</div><h3 id="总结">总结</h3>
 <ol>
 <li>Tornado 的协程是基于 generator 实现的，generator 可以通过 <code>yield</code> 关键字暂停执行，也可以通过 <code>next()</code> 或 <code>send()</code> 恢复执行，且 <code>send()</code> 可以直接向 generator 传递值。</li>
 <li>Future 对象负责将协程串联起来，每一个 Future 对象对应一个异步操作，可以为该对象添加许多回调函数，当异步操作完成后通过对 Future 对象进行 <code>set_done</code> 或者 <code>set_result</code> 就可以执行相关的回调函数。</li>
@@ -645,7 +623,7 @@
     <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
     <script type="text/javascript">
       var gitalk = new Gitalk({
-        id: '2021-07-27 19:53:12 \x2b0800 CST',
+        id: '2021-07-27 19:53:12 \u002b0800 CST',
         title: 'Tornado源码分析(3) - 协程',
         clientID: '857106e549022fc115bb',
         clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
@@ -670,7 +648,7 @@
       <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
       <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
       <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
-      <a href="https://github.com/RickyLin7" class="iconfont icon-github" title="github"></a>
+      <a href="https://github.com/stoutfizz" class="iconfont icon-github" title="github"></a>
   <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
 </div>
 
@@ -712,7 +690,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.d7b7ada643c9c1a983026e177f141f7363b4640d619caf01d8831a6718cd44ea.js"></script>
+<script type="text/javascript" src="/js/main.min.2517c0eb67172a0bae917de4af59b10ca2531411a009d4c0b82f5685259e5771.js"></script>
 
 
 

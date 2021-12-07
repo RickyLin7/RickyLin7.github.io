@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.59.1 with theme even" />
+<meta name="generator" content="Hugo 0.89.4 with theme even" />
 
 
 <link rel="canonical" href="https://blog.moontalk.top/post/why-pod/" />
@@ -35,28 +35,22 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.c5c7c6e13305371a90e1e1d9469de50ab9055253f722c6719157747c6532bb01.css" rel="stylesheet">
+<link href="/sass/main.min.698b45f22722579088fe87bfd0e2dd1ca078c05594c8d33ce7b82b5733f75032.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
 <meta property="og:title" content="为什么需要Pod" />
 <meta property="og:description" content="Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://blog.moontalk.top/post/why-pod/" />
+<meta property="og:url" content="https://blog.moontalk.top/post/why-pod/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-09-07T19:26:25+08:00" />
 <meta property="article:modified_time" content="2021-09-07T19:26:25+08:00" />
+
 <meta itemprop="name" content="为什么需要Pod">
-<meta itemprop="description" content="Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高">
-
-
-<meta itemprop="datePublished" content="2021-09-07T19:26:25&#43;08:00" />
-<meta itemprop="dateModified" content="2021-09-07T19:26:25&#43;08:00" />
-<meta itemprop="wordCount" content="3679">
-
-
-
-<meta itemprop="keywords" content="容器,Docker,K8S," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="description" content="Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高"><meta itemprop="datePublished" content="2021-09-07T19:26:25+08:00" />
+<meta itemprop="dateModified" content="2021-09-07T19:26:25+08:00" />
+<meta itemprop="wordCount" content="3689">
+<meta itemprop="keywords" content="容器,Docker,K8S," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="为什么需要Pod"/>
 <meta name="twitter:description" content="Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高"/>
 
@@ -136,47 +130,28 @@
   <h2 class="post-toc-title">Contents</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#总结">总结</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#总结">总结</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？</p>
-
+      <p>Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？</p>
 <p>这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高学习门槛的味道。但是当我了解了容器和 Pod 背后的设计原理之后，这个问题便不复存在了。</p>
-
-<p>首先我们需要明确一个知识点，那就是<strong>“容器的本质是进程”</strong>。我们在使用 Docker 的时候，实际上并没有一个真正的“Docker 容器”运行在宿主机里面，只不过是在创建进程时，Docker 为它们加上了各种各样的 Namespace 参数。比如进程觉得自己是各自 PID Namespace 中的第 1 号进程，只能看到各自 Mount Namespace 中挂载的目录和文件，只能访问到各自 Network Namespace 里的网络设备，这些边界的设置就仿佛让进程运行在一个个“容器”里面，与外界隔绝。</p>
-
+<p>首先我们需要明确一个知识点，那就是**“容器的本质是进程”**。我们在使用 Docker 的时候，实际上并没有一个真正的“Docker 容器”运行在宿主机里面，只不过是在创建进程时，Docker 为它们加上了各种各样的 Namespace 参数。比如进程觉得自己是各自 PID Namespace 中的第 1 号进程，只能看到各自 Mount Namespace 中挂载的目录和文件，只能访问到各自 Network Namespace 里的网络设备，这些边界的设置就仿佛让进程运行在一个个“容器”里面，与外界隔绝。</p>
 <p>既然“容器的本质是进程”，那么我们可以问自己一个问题：“在实际的操作系统中，进程是单独运行的吗？”。其实并不是，<strong>在操作系统中，进程是以进程组（这里的进程组对应的是 Linux 操作系统下的线程组）的方式有原则的组合在一起</strong>。进程组是一个或多个进程的集合，这些进程之间可以共享文件、信号、数据内存、甚至部分代码，从而紧密协作共同完成一个程序的职责。每个进程都有父进程，而所有的进程以 init 进程为根，形成一个树状结构。</p>
-
-<p><img src="/media/16318026636098.jpg" alt="" /></p>
-
+<p><img src="/media/16318026636098.jpg" alt=""></p>
 <p>那为啥要有进程组呢？其实，提供进程组就是为了方便操作系统对进程进行管理。假设完成一个任务需要同时并发100个进程，当用户处于某种原因要终止这个任务时，如果没有进程组，就需要手动的一个个去杀死这100个进程，并且要严格按照进程间父子兄弟关系顺序，否则会扰乱进程树。有了进程组，就可以将这100个进程设置为一个进程组，它们共用1个组号（PGRP），并且会选取一个进程作为组长（通常是“辈分”最高的那个，该进程的 ID 一般也就是进程组的 ID）。现在就可以通过杀死“进程组长”的方式来关闭这100个进程，并且是严格有序的。</p>
-
 <p>而 Kubernetes 项目所做的，就是<strong>将“进程组”的概念映射到了容器技术</strong>中，从而设计了 Pod 模型。Kubernetes 项目之所以这么做是有一定依据的，Kubernetes 诞生于 Borg 项目，在 Borg 项目的开发和实践过程中，Google 公司的工程师们发现，他们部署的应用往往都存在着类似于“进程和进程组”的关系。更具体地说，就是这些应用之间有着密切的协作关系，使得它们必须部署在同一台机器上。而如果事先没有“组”的概念，像这样的运维关系就会非常难以处理。</p>
-
 <p>哦，那我把这些紧密协作的进程放到一个容器里去跑不就行了，要什么 Pod?</p>
-
 <p>额，也不行，<strong>因为容器被天然设计成“单进程模型”，这里的“单进程”并不是指容器内只能运行“一个”进程，而是指容器没有管理多个进程的能力</strong>。如果在单个容器中运行多个进程，那么保证所有进程正常运行、管理日志等将会成为应用本身的职责。比如应用需要包含一种在进程崩溃时自动重启的机制。同时这些进程都会记录到相同的标准输出中，此时我们很难确定每个进程分别记录了什么。所以我们需要让每个进程运行在自己的容器中，让容器的生命周期与单个进程相匹配，这才是容器最佳实践，也是容器设计的初衷。</p>
-
 <p>由于不能将多个进程聚集在一个单独的容器中，我们就需要另一种更高级的结构来将容器绑定在一起，并将它们作为一个单元进行管理，这便是 Pod 背后的设计原理。</p>
-
 <p>在包含容器的 Pod 下，我们可以同时运行一组密切相关的进程，并为它们提供（几乎）相同的环境，这些紧密协作的进程特征包括但不限于：互相之间会发生直接的文件交换、使用 localhost 或者 Socket 文件进行本地通信、会发生非常频繁的远程调用、需要共享某些 Linux Namespace（比如，一个进程要加入另一个进程的 Network Namespace）等等。此时这些进程就好像全部运行于单个容器，同时又保持着一定的隔离，以便于我们能够全面地利用容器所提供的特性。</p>
-
 <p>那么 Pod 是如何为容器提供协作环境的呢，这就要说说 Pod 的实现原理了。首先我们需要知道的是，<strong>Pod 本身只是一个逻辑概念</strong>，K8S 真正处理的还是操作系统上 Linux 容器的 Namespace 和 Cgroups，并不存在一个所谓的 Pod 边界或者隔离环境。Pod 是一组共享了某些资源的容器，具体的说：Pod 里的所有容器，共享的是同一个 Network Namespace，并且可以声明共享同一个 Volume。在 Kubernetes 项目里，Pod 的实现需要使用一个中间容器，这个容器叫作 Infra 容器。在 Pod 中，Infra 容器永远都是第一个被创建的容器，而其他用户定义的容器，则通过 Join Network Namespace 的方式，与 Infra 容器关联在一起。这样的组织关系，可以用下面这样一个示意图来表达：</p>
-
-<p><img src="/media/16318027257502.jpg" alt="" /></p>
-
+<p><img src="/media/16318027257502.jpg" alt=""></p>
 <p>如上图所示，这个 Pod 里有两个用户容器 A 和 B，还有一个 Infra 容器。
 Infra 容器占用极少的资源（解压后大概 100~200 KB），它使用的是一个用汇编语言编写的特殊镜像，叫作：k8s.gcr.io/pause。Infra 容器创建之后提供了 Network Namespace，这时用户容器就可以加入到 Infra 容器的 Network Namespace 当中了。所以，如果你查看这些容器在宿主机上的 Namespace 文件，会发现它们指向的值是完全一样的。这也就意味着，对于 Pod 里的容器 A 和容器 B 来说：</p>
-
 <ul>
 <li>它们可以直接使用 localhost 进行通信；</li>
 <li>它们看到的网络设备跟 Infra 容器看到的完全一样；</li>
@@ -184,19 +159,14 @@ Infra 容器占用极少的资源（解压后大概 100~200 KB），它使用的
 <li>其他所有的网络资源，也都是一个 Pod 一份，并且被该 Pod 中的所有容器共享；</li>
 <li>Pod 的生命周期只跟 Infra 容器一致，而与用户容器 A 和 B 无关。</li>
 </ul>
-
 <p>这种容器组合模式有一个专属的名称，叫做 <strong>sidecar</strong>。指的是我们可以在一个 Pod 中，启动一个辅助容器，来完成一些独立于主进程（主容器）之外的工作。下图是 sidecar 模式的抽象模型。</p>
-
-<p><img src="/media/16318027589246.jpg" alt="" /></p>
-
+<p><img src="/media/16318027589246.jpg" alt=""></p>
 <p>明白了 Pod 的实现原理后我们不难发现，Pod 这个概念，实际上提供的是一种编排思想，<strong>即“将紧密协作的容器成组调度”</strong>。这里的“紧密协作”很重要，这意味着并不是所有有“关系”的容器都应该被放置在一个 Pod 当中。下面我将通过两个案例来分析一下该如何通过 Pod 合理地管理容器。</p>
-
 <p>第一个案例是 WAR 包与 Web 服务器。现在有一个 Java Web 应用的 WAR 包，它需要被放在 Tomcat 的 webapps 目录下运行起来。</p>
-
 <p>我们先来分析下两者的关系。首先 WAR 包无法单独运行，它需要依赖 Tomcat 服务器进行解包和类加载。其次，Tomcat 服务器虽然可以单独运行，但如果 webapps 目录下没有 WAR 包存在的话，等于没有可对外提供的应用服务，也就没有运行的意义了。同时 Tomcat 加载的是本地目录下的 WAR 包，所以不能将它们俩分别部属在两台计算机上。由此看来，WAR 包与 Web 服务器这两个容器之间存在着一定的耦合关系，它们需要被当做一个整体的单元进行部署和管理，共同协作从而正常对外提供应用服务。因此我们可以把这两个容器安排在一个 Pod 中，具体的 Pod 描述文件如下所示：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -223,55 +193,47 @@ Infra 容器占用极少的资源（解压后大概 100~200 KB），它使用的
 </span><span class="lnt">25
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
-</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>javaweb<span class="w">
-</span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>initContainers<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>image<span class="p">:</span><span class="w"> </span>myapp<span class="w">
-</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>war<span class="w">
-</span><span class="w">    </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;cp&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;/myapp.war&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;/app&#34;</span><span class="p">]</span><span class="w">
-</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>mountPath<span class="p">:</span><span class="w"> </span>/app<span class="w">
-</span><span class="w">      </span>name<span class="p">:</span><span class="w"> </span>app-volume<span class="w">
-</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>image<span class="p">:</span><span class="w"> </span>tomcat<span class="w">
-</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>tomcat<span class="w">
-</span><span class="w">    </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;sh&#34;</span><span class="p">,</span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="s2">&#34;/root/apache-tomcat-7.0.108/bin/start.sh&#34;</span><span class="p">]</span><span class="w">
-</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>mountPath<span class="p">:</span><span class="w"> </span>/root/apache-tomcat<span class="m">-7.0.108</span>/webapps<span class="w">
-</span><span class="w">      </span>name<span class="p">:</span><span class="w"> </span>app-volume<span class="w">
-</span><span class="w">    </span>ports<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
-</span><span class="w">      </span>hostPort<span class="p">:</span><span class="w"> </span><span class="m">8001</span><span class="w"> 
-</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>app-volume<span class="w">
-</span><span class="w">    </span>emptyDir<span class="p">:</span><span class="w"> </span>{}</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">javaweb</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">initContainers</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">myapp</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">war</span><span class="w">
+</span><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;cp&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;/myapp.war&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;/app&#34;</span><span class="p">]</span><span class="w">
+</span><span class="w">    </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/app</span><span class="w">
+</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">app-volume</span><span class="w">
+</span><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">tomcat</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">tomcat</span><span class="w">
+</span><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;sh&#34;</span><span class="p">,</span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="s2">&#34;/root/apache-tomcat-7.0.108/bin/start.sh&#34;</span><span class="p">]</span><span class="w">
+</span><span class="w">    </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/root/apache-tomcat-7.0.108/webapps</span><span class="w">
+</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">app-volume</span><span class="w">
+</span><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">      </span><span class="nt">hostPort</span><span class="p">:</span><span class="w"> </span><span class="m">8001</span><span class="w"> 
+</span><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">app-volume</span><span class="w">
+</span><span class="w">    </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>这里使用到了 initContainers，initContainers 下定义的容器会比 spec.containers 定义的容器先启动。并且 initContainers 下的容器会按顺序逐一启动，直到它们都启动并且退出了，用户容器才会启动。</p>
 </blockquote>
-
-<p>简单说明一下，这里的 tomcat 容器是主容器，而 war 这个 init container 在启动后执行 <code>cp</code> 命令，将应用 WAR 包拷贝到 <code>/app</code> 目录后便退出，扮演 sidecar 角色，起着辅助容器的作用。<code>/app</code> 目录挂载了一个名为 app-volume 的 Volume，而 tomcat 容器同样挂载 app-volume 到自己的 webapps 目录下。所以等 tomcat 容器启动时，它的 webapps 目录下就会存在 myapp.war 这个文件（Pod 内容器共享 Volume）。</p>
-
+<p>简单说明一下，这里的 tomcat 容器是主容器，而 war 这个 init container 在启动后执行 <code>cp</code> 命令，将应用 WAR 包拷贝到 <code>/app</code> 目录后便退出，扮演 sidecar 角色，起着辅助容器的作用。<code>/app </code> 目录挂载了一个名为 app-volume 的 Volume，而 tomcat 容器同样挂载 app-volume 到自己的 webapps 目录下。所以等 tomcat 容器启动时，它的 webapps 目录下就会存在 myapp.war 这个文件（Pod 内容器共享 Volume）。</p>
 <p>接下来我们看第二个案例：Web 应用服务器与后端数据库，你认为这两个容器应该将其配置成单个 Pod 还是两个 Pod 呢？</p>
-
 <p>还是一样，我们来一起分析下这两个容器的关系。首先，在单个 Pod 中同时运行 Web 应用服务器和数据库这两个容器是可行的，并不会因为同属于一个 Pod 而导致无法正常运行的错误。但它们真的需要在同一台计算机上运行吗？答案显然是否定的。如果把这两个容器放在同一个 Pod 中，那么两者会始终调度在同一台计算机上运行。假设你的 Kubernetes 集群中现在有两个节点，那么这个 Pod 中的容器就只能使用其中一个节点，而不会充分利用第二个节点上的计算资源（CPU 和内存）。</p>
-
 <p>第二个点就是扩缩容问题。Pod 是 Kubernetes 的基本调度单位，也就是说 Kubernetes 不可能横向扩缩容单个容器，只能扩缩容整个 Pod。一般来说 Web 应用服务器和数据库这两个容器有着完全不同的扩缩容要求。举个例子：假设某 Web 应用服务器和数据库的请求上限都为100，某一时刻有1000个请求，其中700个是业务请求，300个是数据库查询，那么“7个 Web 应用服务器容器 + 3个数据库容器”才是合理配置，如果将它们放在一个 Pod 中进行扩缩容，那么它们的数量会始终保持一致，不符合实际需求。</p>
-
 <p>通过以上两个案例可以发现，我们决定何时在 Pod 中使用多个容器时，需要思考以下几个问题：</p>
-
 <ol>
 <li>它们需要一起运行还是可以在不同的主机上运行？</li>
 <li>它们代表的是一个整体还是相互独立的组件？</li>
 <li>它们必须一起进行扩缩容还是可以分别进行？</li>
 </ol>
-
 <h2 id="总结">总结</h2>
-
 <ol>
 <li>Pod 的容器设计模式借鉴了操作系统“进程组”的概念，我们现实中的应用程序往往存在类似“进程与进程组”这样的协作关系，如果没有“组”的概念，这样的运维关系就会变得难以处理。</li>
 <li>容器是天然的“单进程”模型，不要把多个进程塞到一个容器中去运行，让每个进程运行在自己的容器中，让容器的生命周期与单个进程相匹配，这才是容器最佳实践。</li>
@@ -321,7 +283,7 @@ Infra 容器占用极少的资源（解压后大概 100~200 KB），它使用的
     <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
     <script type="text/javascript">
       var gitalk = new Gitalk({
-        id: '2021-09-07 19:26:25 \x2b0800 CST',
+        id: '2021-09-07 19:26:25 \u002b0800 CST',
         title: '为什么需要Pod',
         clientID: '857106e549022fc115bb',
         clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
@@ -346,7 +308,7 @@ Infra 容器占用极少的资源（解压后大概 100~200 KB），它使用的
       <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
       <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
       <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
-      <a href="https://github.com/RickyLin7" class="iconfont icon-github" title="github"></a>
+      <a href="https://github.com/stoutfizz" class="iconfont icon-github" title="github"></a>
   <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
 </div>
 
@@ -388,7 +350,7 @@ Infra 容器占用极少的资源（解压后大概 100~200 KB），它使用的
 
 
 
-<script type="text/javascript" src="/js/main.min.d7b7ada643c9c1a983026e177f141f7363b4640d619caf01d8831a6718cd44ea.js"></script>
+<script type="text/javascript" src="/js/main.min.2517c0eb67172a0bae917de4af59b10ca2531411a009d4c0b82f5685259e5771.js"></script>
 
 
 

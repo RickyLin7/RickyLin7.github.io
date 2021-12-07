@@ -142,13 +142,6 @@
   </url>
   
   <url>
-    <loc>https://blog.moontalk.top/tags/i/o/</loc>
-    <lastmod>2021-07-27T19:37:19+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://blog.moontalk.top/post/io-multiplexing/</loc>
     <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -156,14 +149,14 @@
   </url>
   
   <url>
-    <loc>https://blog.moontalk.top/categories/linux/</loc>
+    <loc>https://blog.moontalk.top/tags/linux/</loc>
     <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://blog.moontalk.top/tags/linux/</loc>
+    <loc>https://blog.moontalk.top/categories/linux/</loc>
     <lastmod>2021-07-27T19:37:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -242,6 +235,12 @@
   <url>
     <loc>https://blog.moontalk.top/tags/%E9%98%B2%E7%81%AB%E5%A2%99/</loc>
     <lastmod>2020-05-24T21:19:54+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.moontalk.top/tags/i/o/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
