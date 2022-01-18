@@ -49,7 +49,7 @@
 <meta itemprop="name" content="自顶向下-Pod创建">
 <meta itemprop="description" content="当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过"><meta itemprop="datePublished" content="2022-01-09T15:40:22+08:00" />
 <meta itemprop="dateModified" content="2022-01-09T15:40:22+08:00" />
-<meta itemprop="wordCount" content="7145">
+<meta itemprop="wordCount" content="7146">
 <meta itemprop="keywords" content="自顶向下,容器,K8S," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="自顶向下-Pod创建"/>
 <meta name="twitter:description" content="当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过"/>
@@ -370,7 +370,7 @@ users:
 </ol>
 <h3 id="cri-与容器运行时">CRI 与容器运行时</h3>
 <p>kubelet 调用下层容器运行时（Container Runtime）的执行过程并不会直接调用 Docker 的 API，而是通过一组叫做容器运行时接口（CRI）的 gRPC 接口来间接执行的。</p>
-<p>kubernetes 项目之所以在 kubelet 中引入这样一层单独的抽象，是为了对 kubernetes 屏蔽下层容器运行时的差异。实际上在 1.6 版本之前，kubernetes 就是直接调用 Docker 的 API 来创建和管理容器的。但是后来出现了其他的容器运行时（比如 CoreOS 的 rkt）和 Docker 正面竞争，导致 kubelet 每一次重要功能的更新，都不得不考虑各个容器运行时的处理场景，然后分别更新其所属部分的代码。这种繁琐的维护工作让 SIG-Node 小组决定解耦 kubelet 和容器运行时，于是 CRI 便诞生了。CRI 出现后，kubelet 只需要和这个接口打交道。而具体的容器项目，比如 Docker、rkt、run 等，它们只需要自己提供该接口的实现，然后对 kubelet 暴露出 gRPC 服务即可。</p>
+<p>kubernetes 项目之所以在 kubelet 中引入这样一层单独的抽象，是为了对 kubernetes 屏蔽下层容器运行时的差异。实际上在 1.6 版本之前，kubernetes 就是直接调用 Docker 的 API 来创建和管理容器的。但是后来出现了其他的容器运行时（比如 CoreOS 的 rkt）和 Docker 正面竞争，导致 kubelet 每一次重要功能的更新，都不得不考虑各个容器运行时的处理场景，然后分别更新其所属部分的代码。这种繁琐的维护工作让 SIG-Node 小组决定解耦 kubelet 和容器运行时，于是 CRI 便诞生了。CRI 出现后，kubelet 只需要和这个接口打交道。而具体的容器项目，比如 Docker、rkt、runV 等，它们只需要自己提供该接口的实现，然后对 kubelet 暴露出 gRPC 服务即可。</p>
 <blockquote>
 <p>注：对于 Docker 项目来说，它的 CRI 实现叫做 dockershim</p>
 </blockquote>
