@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>自顶向下-Pod创建 - moontalk</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="MidoriFizz" /><meta name="description" content="当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.91.2 with theme even" />
+
+
+<link rel="canonical" href="https://blog.moontalk.top/post/top-down-pod-create/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.698b45f22722579088fe87bfd0e2dd1ca078c05594c8d33ce7b82b5733f75032.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="自顶向下-Pod创建" />
+<meta property="og:description" content="当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.moontalk.top/post/top-down-pod-create/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-01-09T15:40:22+08:00" />
+<meta property="article:modified_time" content="2022-01-09T15:40:22+08:00" />
+
+<meta itemprop="name" content="自顶向下-Pod创建">
+<meta itemprop="description" content="当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过"><meta itemprop="datePublished" content="2022-01-09T15:40:22+08:00" />
+<meta itemprop="dateModified" content="2022-01-09T15:40:22+08:00" />
+<meta itemprop="wordCount" content="7145">
+<meta itemprop="keywords" content="自顶向下,容器,K8S," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="自顶向下-Pod创建"/>
+<meta name="twitter:description" content="当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">MoonTalk</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">MoonTalk</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">自顶向下-Pod创建</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-01-09 </span>
+        <div class="post-category">
+            <a href="/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/"> 云原生 </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> times read </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">Contents</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#kubectl">kubectl</a>
+      <ul>
+        <li><a href="#基本验证">基本验证</a></li>
+        <li><a href="#客户端认证">客户端认证</a></li>
+      </ul>
+    </li>
+    <li><a href="#kube-apiserver">kube-apiserver</a>
+      <ul>
+        <li><a href="#认证">认证</a></li>
+        <li><a href="#授权">授权</a></li>
+        <li><a href="#准入控制">准入控制</a></li>
+      </ul>
+    </li>
+    <li><a href="#etcd">etcd</a></li>
+    <li><a href="#控制循环">控制循环</a>
+      <ul>
+        <li><a href="#deployment-controller">Deployment Controller</a></li>
+        <li><a href="#replicaset-controller">ReplicaSet Controller</a></li>
+      </ul>
+    </li>
+    <li><a href="#scheduler">Scheduler</a></li>
+    <li><a href="#kubelet">Kubelet</a>
+      <ul>
+        <li><a href="#cri-与容器运行时">CRI 与容器运行时</a></li>
+        <li><a href="#cni-与容器网络">CNI 与容器网络</a></li>
+        <li><a href="#容器启动">容器启动</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 <code>kubectl apply</code> 命令来应用一份声明式的 YAML 文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx-deployment</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="c"># tells deployment to run 2 pods matching the template</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nginx</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nginx:1.14.2</span><span class="w">
+</span><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>经过几秒钟之后，就可以看到两个 nginx pod 成功运行在集群工作节点上。这一切好像变魔术一般，所见即所得。但是这背后究竟发生了什么，我们却浑然不知。为了探究清楚这背后的运作原理，我们有必要来详细分析一下集群中的各个组件究竟完成了哪些工作。</p>
+<h2 id="kubectl">kubectl</h2>
+<h3 id="基本验证">基本验证</h3>
+<p>kubectl 是 apiserver 的客户端工具，也是各种命令的操作入口。kubectl 接收到用户输入的命令后会执行一些基本的验证操作，以确保不合法的请求可以快速失败（比如创建不支持的资源、YAML文件格式错误、镜像名称错误等）。这样做的好处是可以做一道拦截，防止这类请求直接发送至 apiserver 带来不必要的负载。</p>
+<h3 id="客户端认证">客户端认证</h3>
+<p>基本验证完成后，kubectl 还需要进行客户端认证。默认情况下，kubectl 在 <code>$HOME/.kube</code> 目录下查找名为 <code>config</code> 的文件。也可以通过设置 <code>$KUBECONFIG</code> 环境变量或者设置 <code>--kubeconfig</code> 参数来指定其他 kubeconfig 文件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>root@k8s-master ~<span class="o">]</span><span class="c1"># cd .kube/</span>
+<span class="o">[</span>root@k8s-master .kube<span class="o">]</span><span class="c1"># ls</span>
+cache  config  http-cache
+<span class="o">[</span>root@k8s-master .kube<span class="o">]</span><span class="c1"># cat config</span>
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: &lt;证书授权信息&gt;
+    server: https://10.1.100.53:6443  <span class="c1"># apiserver 地址</span>
+  name: example-cluster
+contexts:
+- context:
+    cluster: example-cluster
+    user: kubernetes-admin
+  name: kubernetes-admin@example-cluster
+current-context: kubernetes-admin@example-cluster
+kind: Config
+preferences: <span class="o">{}</span>
+users:
+- name: kubernetes-admin
+  user:
+    client-certificate-data: &lt;客户端证书信息&gt;
+</code></pre></td></tr></table>
+</div>
+</div><p>完成客户端认证后，kubectl 会将封装好的 HTTP 请求发送至 apiserver.</p>
+<h2 id="kube-apiserver">kube-apiserver</h2>
+<p>apiserver 是 k8s 的中心组件，其他组件或客户端工具（如 kubectl）都会去调用它。apiserver 以 RESTful API 的形式提供了操作集群状态的 CRUD 接口，并将状态写入 etcd（在 k8s 中，apiserver 是 etcd 的唯一客户端，对 etcd 的读写都需要经过 apiserver 来处理）。apiserver 对请求的处理流程如下图所示：</p>
+<p><img src="/media/%E5%AE%B9%E5%99%A8@2x-2.png" alt="容器@2x"></p>
+<h3 id="认证">认证</h3>
+<p>apiserver 要先对发送请求的客户端进行认证。这是通过配置在 apiserver 上的一个或多个 <strong>认证插件（Authentication Plugin）</strong> 来实现的。apiserver 会 <a href="https://github.com/kubernetes/apiserver/blob/release-1.18/pkg/authentication/request/union/union.go#L55">轮流调用</a> 这些插件来检查 HTTP 请求，直到有一个能够成功认证。下面是几种常见的认证方式：</p>
+<ul>
+<li><a href="https://github.com/kubernetes/apiserver/blob/release-1.18/plugin/pkg/authenticator/request/basicauth/basicauth.go#L39">HTTP Basic Authentication</a>：使用请求中的 <code>Authorization: Basic BASE64ENCODED(USER:PASSWORD)</code> header 对请求进行身份验证。</li>
+<li><a href="https://github.com/kubernetes/apiserver/blob/release-1.18/pkg/authentication/request/bearertoken/bearertoken.go#L37">Bearer Token Authentication</a>：从 <code>--token-auth-file</code> 参数指定的文件中读取持有者令牌进行认证处理。</li>
+<li><a href="https://github.com/kubernetes/apiserver/blob/release-1.18/pkg/authentication/request/x509/x509.go#L110">x509 Authentication</a>：使用 <code>--client-ca-file</code> 参数指定的 CA 证书进行认证处理。</li>
+</ul>
+<p>如果<a href="https://github.com/kubernetes/apiserver/blob/release-1.18/pkg/authentication/request/union/union.go#L70">认证失败</a>，apiserver 会将错误信息聚合返回并认定该次请求失败；如果<a href="https://github.com/kubernetes/apiserver/blob/release-1.18/pkg/endpoints/filters/authentication.go#L67-L69">认证成功</a>，则将请求头中的<code>Authorization</code> 字段删除，然后将用户信息（用户名、用户ID和归属组）抽取出来并添加到上下文中，为后续授权和准入控制阶段提供用户身份的访问凭证。</p>
+<h3 id="授权">授权</h3>
+<p>经过认证阶段后，apiserver 已经确认了我们是一个合法的客户端。但这还不够，除了认证插件，apiserver 还配置了一个或多个 <strong>授权插件（Authorization Plugin）</strong>，用来决定认证的用户是否具有对请求资源执行操作的权限（身份认证和授权是两个概念）。比如我们这里使用 <code>kubectl apply</code> 命令创建 pod，这时 apiserver 会轮询所有的授权插件，来确认用户是否可以在请求的命名空间（namespace）创建 pod。apiserver 通过 <code>--authorization-mode</code> 参数来指定授权模式，目前支持的<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#authorization-modules">授权模式</a>有以下几种：</p>
+<ul>
+<li>Node：一个专用授权组件，它根据 kubelet 计划运行的 pods 向 kubelet 授予权限，确保 kubelet 只能访问自己节点上的资源。</li>
+<li>ABAC：基于属性的访问控制（ABAC）定义了一种访问控制范式，通过使用将属性组合在一起的策略，将访问权限授予用户。策略定义在静态文件中，可以使用任何类型的属性（用户属性、资源属性、对象和环境属性等）。</li>
+<li>RBAC：基于角色的访问控制（RBAC）是一种基于企业中单个用户的角色来管理对计算机或网络资源访问权限的方法。访问权限是单个用户执行特定任务的能力，例如查看、创建或修改文件。被启用之后，RBAC（基于角色的访问控制）将使用 <code>rbac.authorization.k8s.io</code> API 组来驱动鉴权决策，允许管理员通过 Kubernetes API 动态配置权限策略。</li>
+<li>Webhook：Webhook 是一个 HTTP 回调，当发生某些事件时触发回调，通过 HTTP POST 方法进行简单的事件通知。</li>
+</ul>
+<h3 id="准入控制">准入控制</h3>
+<p>通过认证和授权两道关卡后，我们的客户端调用请求还是得不到 apiserver 的响应，这里还需要经过准入 <strong>控制插件（Admission Control Plugin）</strong> 的验证。同理，apiserver 会配置多个准入控制插件（官方定义的有十几种，还可以自定义插件实现自己的准入控制）。这些插件会因为各种原因修改资源，可能会初始化资源定义中漏配的字段为默认值或者重写它们。插件甚至会去修改并不在请求中的相关资源，同时也会因为某些原因拒绝一个请求。这些验证的都是为了保证请求能够符合集群更广泛的期望和规则。</p>
+<blockquote>
+<p>注：如果请求只是读取数据，则不会做准入控制的验证；准入控制插件与认证和授权插件的工作方式类似，但是有一点不同，资源需要经过所有准入控制插件的验证，只要有一个不通过，整个验证流程就会中断并立即拒绝请求返回报错信息。</p>
+</blockquote>
+<p>下面介绍几种常见的准入控制插件，更多的准入控制插件可以在 Kubernetes <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#what-does-each-admission-controller-do">官方文档</a>中查看。</p>
+<ul>
+<li>AlwaysPullImages：重写 pod 的 <code>imagePullPolicy</code> 为 <code>Always</code>，强制每次部署 pod 时拉取镜像。</li>
+<li>ServiceAccount：未明确定义服务账户的使用默认账户。</li>
+<li>NamespaceLifecycle：防止在命名空间中创建正在被删除的 pod，或在不存在的命名空间中创建 pod。</li>
+<li>ResourceQuota：不仅能限制特定命名空间内创建资源的数量，还能限制特定命名空间中的 pod 请求的资源总量，如CPU和内存。该准入控制插件和资源对象 <code>ResourceQuota</code> 一起实现了资源配额管理。</li>
+</ul>
+<p>准入控制验证是资源对象保存到 etcd 前的最后一个堡垒，在通过了所有准入控制插件的验证后，apiserver 会验证存储到 etcd 的对象并写入 etcd，然后返回一个响应给客户端。</p>
+<h2 id="etcd">etcd</h2>
+<p>etcd 被隐藏在 apiserver 之后，kubenetes 所有的资源对象都存储在 etcd 中。以我们前面执行的 <code>kubectl apply -f nginx-deployment.yaml</code> 命令来分析，apiserver 在经过一系列的验证操作后，我们创建的 Deployment 资源记录已经保存到了 etcd 中。下面是一个存储在 etcd 的 nginx deployment 样例:</p>
+<p><img src="/media/16424186068316.jpg" alt=""></p>
+<h2 id="控制循环">控制循环</h2>
+<p>除了前面提到的处理流程，apiserver 没有做其他额外的工作。例如我们这里创建了一个 Deployment 资源，那么 apiserver 只会把 Deployment 资源记录保存到 etcd，它不会去创建与之对应的 Replicaset 和 Pod，它也不会去管理服务的端点，这些工作都是交由 controller manager（控制器管理器）来完成的。</p>
+<p>kubernetes 在整个系统中使用了<a href="https://github.com/kubernetes/kubernetes/tree/release-1.18/pkg/controller">大量的 Controller</a>，它们通过 <code>kube-controller-manager</code> 组件并行运行。Controller 都遵循 Kubernetes 项目中的一个通用编排模式：控制循环（control loop）。控制循环用伪代码可以描述为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">for {
+  实际状态 := 获取集群中对象X的实际状态（Actual State）
+  期望状态 := 获取集群中对象X的期望状态（Desired State）
+  if 实际状态 == 期望状态{
+    什么都不做
+  } else {
+    执行编排动作，将实际状态调整为期望状态
+  }
+}
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>注：在具体实现中，实际状态往往来自于 Kubernetes 集群本身；而期望状态一般来自于用户提交的 YAML 文件。</p>
+</blockquote>
+<h3 id="deployment-controller">Deployment Controller</h3>
+<p>controller manager 利用 apiserver 提供的 <strong>List &amp; Watch</strong> 机制监听（watch）资源的变化。当 apiserver 检测到资源发生了变化，就会主动通知到 controller manager，然后 controller manager 会将事件（event）放到缓存中，异步分发给每个 Controller 注册的 eventHandler。当前例子中，Deployment Controller 会通过 Informer <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/deployment/deployment_controller.go#L121-L126">注册相关的 eventHandler</a>。</p>
+<p>这里提到了 Informer，简单说一下。我们可以把 Informer 理解为一个通知器，<strong>List &amp; Watch</strong> 的工作实际上就是由它来完成的。Informer 有两个职责：第一个职责是同步本地资源对象的缓存，也是最重要的职责。它可以有效减少对 Kubenetes API 的直接调用；第二个则是根据不同的事件类型触发 Controller 事先注册好的 eventHandler。我们可以通过 <a href="https://github.com/kubernetes/client-go/tree/master/informers">informers 代码库</a>编写自定义控制器。</p>
+<p>好了，回到主线上来。我们这里是添加 Deployment，所以 Deployment Controller 会执行 <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/deployment/deployment_controller.go#L167-L171">addDeployment</a> 这个 eventHandler，它会将该资源对象添加到内部工作队列，然后开始处理这个资源对象。</p>
+<p>首先会通过标签选择器查询 apiserver 来<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/deployment/deployment_controller.go#L599-L611">检查</a>该 Deployment 是否有与其关联的 ReplicaSet 或 Pod 记录。如果没有与其关联的 ReplicaSet 或 Pod 记录，Deployment Controller 就会开始执行<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/deployment/sync.go#L298">弹性伸缩</a>流程：修改目标 ReplicaSet 规格中的 <code>Replicas</code> 参数和注解 <code>deployment.kubernetes.io/desired-replicas</code> 的值并<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/deployment/sync.go#L423">通过 API 请求更新</a>当前的 ReplicaSet 资源对象。</p>
+<p>完成上述步骤后，该 Deployment 的 <code>status</code> 会被更新，然后重新进入与之前相同的循环，等待 Deployment 与期望的状态相匹配。注意，这里还没有创建 Pod，Deployment Controller 只关注 ReplicaSet 的状态，Pod 创建工作需要交由 ReplicaSet Controller 来完成。</p>
+<h3 id="replicaset-controller">ReplicaSet Controller</h3>
+<p>在上一步中，Deployment Controller 创建了 ReplicaSet 资源。和前面一样，controller manager 利用 apiserver 提供的 <strong>List &amp; Watch</strong> 机制接收到 apiserver 主动发送的 ReplicaSet 资源变化通知。然后这次轮到 ReplicaSet Controller 注册的 eventHandler 来处理。</p>
+<p>首先<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/replicaset/replica_set.go#L650">检查</a>新创建的 ReplicaSet 资源状态，检查当前实际状态和期望状态之间存在的偏差，然后通过<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/controller/replicaset/replica_set.go#L545">调整 Pod 副本数</a>来达到期望的状态。</p>
+<p>Pod 的创建是批量进行的，这里采用了一种<a href="https://github.com/kubernetes/kubernetes/blob/0f3e6609388defe7d0149216cb0409531f8d33b3/pkg/controller/replicaset/replica_set.go#L745">“慢启动”策略</a>（slow start）：先少量创建一批 Pod，如果创建成功，下一批尝试的数量可能会呈指数增长。这样做的好处是避免大量因相同错误而失败的 Pod（例如尝试创建大量因资源配额不足的 Pod）向 apiserver 发送大量不必要的请求，拉高 apiserver 的负载。</p>
+<p>这里需要知道的是，Deployment → ReplicaSet → Pod 是有一个层级关系的，kubernetes 通过 <code>Owner References</code> 来构造严格的资源对象层级。这样可以保证当 Controller 管理的资源被删除时，其子资源就会被垃圾处理器删除（级联删除），同时也为父级资源提供了一种有效的方式来避免它们竞争同一个子资源。</p>
+<p><img src="/media/%E5%AE%B9%E5%99%A8@2x%20-1-.png" alt="容器@2x -1-"></p>
+<h2 id="scheduler">Scheduler</h2>
+<p>当所有的 Controller 正常运行后，etcd 中就会保存一个 Deployment、一个 ReplicaSet 和 两个 Pod 资源记录，并且可以通过 apiserver 查看。但是这些 Pod 目前还处于 <code>Pending</code> 状态，因为它们还没有被调度到集群中合适的 Node 上运行。关于调度方面的相关工作，就需要交由调度器（shceduler）来处理了。</p>
+<p>scheduler 作为一个独立组件运行在集群控制平面上，它的工作方式与其他 Controller 类似：通过 apiserver 的 watch 接口监听资源对象的变化，并将对象的实际状态向期望状态修正。scheduler 的主要职责是为新创建出来的 Pod 寻找一个最合适的节点，这个寻找过程包含以下两个步骤：</p>
+<ol>
+<li><a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/scheduler/core/generic_scheduler.go#L176">过滤</a>：从集群所有的节点中使用一组叫做 Predicate 的调度算法选出所有可以运行该 Pod 的节点（例如，选出符合 CPU 和内存资源限制的节点）；</li>
+<li><a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/scheduler/core/generic_scheduler.go#L211">打分</a>：从第一步的结果中，再调用一组叫做 Priority 的调度算法给每个节点打分，挑选出一个最符合条件的节点作为最终结果（例如，选出资源消耗最小的节点）。</li>
+</ol>
+<p>调度算法执行完成后，调度器会把 Pod 对象的 <code>spec.nodeName</code> 字段的值修改为上述节点的名称。在 Kubernetes 中这个步骤被称为 Bind。注意，Bind 阶段只会更新 scheduler cache 里的 Pod 和 Node 信息，并不会远程访问 apiserver。这种基于“乐观”假设的 API 对象更新方式，在 Kubernetes 中被称为 Assume。</p>
+<p>Assume 完成后，调度器才会创建一个 Goroutine 向 apiserver 发起异步更新 Pod 的请求，来真正完成 Bind 操作。如果这次异步请求失败了，也没有太大关系，等 scheduler cache 同步之后一切都会恢复正常。</p>
+<p><img src="/media/%E5%AE%B9%E5%99%A8@2x%20-3-.png" alt="容器@2x -3-"></p>
+<p>好了，现在 Pod 已经被 scheduler 调度到了某个节点上，也意味着集群控制平面的工作告一段落，接下来就需要工作节点上的 kubelet 组件来接管并部署 Pod 了。</p>
+<h2 id="kubelet">Kubelet</h2>
+<p>简单来说，kubelet 就是负责所有运行在工作节点上内容的组件。它第一个任务就是请求 apiserver 创建一个 Node 资源来注册当前节点。然后定时请求 apiserver 获取当前 Node 上需要运行的 Pod 清单。获取到这个清单之后，它就会和自己本地缓存中的 Pod 列表进行比较，如果存在差异，就开始<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1498">同步 Pod 列表</a>。这里简要分析下同步的流程：</p>
+<ol>
+<li>如果 pod 正在被创建，则<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1543">记录 pod worker 的启动延迟</a></li>
+<li>为 pod <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1550">生成 PodStatus 对象</a>，PodStatus 记录了 pod 当前阶段的状态。pod 的状态（Phase）包括 <code>Pending</code>、<code>Running</code>、<code>Succeeded</code>、<code>Failed</code> 和 <code>Unkown</code> 这几个值。</li>
+<li>kubelet 将 PodStatus <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1590">发送至状态管理器</a>，状态管理器会通过请求 apiserver 异步更新 pod 的状态。</li>
+<li>接下来 kubelet 会执行 Admit 操作来验证该 Pod 是否确实能够运行在当前节点上。Admit 操作会通过一系列的<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L895-L897">准入控制器</a>进行检验确认。我们可以把之前提到的 scheduler 验证称为第一次确认，这里的 Admit 操作就属于二次确认。</li>
+<li>如果 kubelet 启动时指定了 <code>cgroups-per-qos</code> 参数，kubelet 会为该 pod <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1650">创建 Cgroups</a> 并进行相应的资源限制配置。</li>
+<li>如果 pod 没有数据目录，则<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1692">创建 pod 数据目录</a>（<code>/var/run/kubelet/pods/&lt;podID&gt;</code>）。</li>
+<li>等待 volumes <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1701">附加或挂载</a>到 pod 上</li>
+<li>通过请求 apiserver <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1709">查询</a> pod <code>Spec.ImagePullSecrets</code> 中定义的所有 Secrets（用于从仓库拉取镜像时做身份验证），然后将其注入到容器中。</li>
+<li>最后<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kubelet.go#L1712">调用</a>容器运行时的 <code>SyncPod</code> 函数，开始创建这个 Pod 所定义的容器。</li>
+</ol>
+<h3 id="cri-与容器运行时">CRI 与容器运行时</h3>
+<p>kubelet 调用下层容器运行时（Container Runtime）的执行过程并不会直接调用 Docker 的 API，而是通过一组叫做容器运行时接口（CRI）的 gRPC 接口来间接执行的。</p>
+<p>kubernetes 项目之所以在 kubelet 中引入这样一层单独的抽象，是为了对 kubernetes 屏蔽下层容器运行时的差异。实际上在 1.6 版本之前，kubernetes 就是直接调用 Docker 的 API 来创建和管理容器的。但是后来出现了其他的容器运行时（比如 CoreOS 的 rkt）和 Docker 正面竞争，导致 kubelet 每一次重要功能的更新，都不得不考虑各个容器运行时的处理场景，然后分别更新其所属部分的代码。这种繁琐的维护工作让 SIG-Node 小组决定解耦 kubelet 和容器运行时，于是 CRI 便诞生了。CRI 出现后，kubelet 只需要和这个接口打交道。而具体的容器项目，比如 Docker、rkt、run 等，它们只需要自己提供该接口的实现，然后对 kubelet 暴露出 gRPC 服务即可。</p>
+<blockquote>
+<p>注：对于 Docker 项目来说，它的 CRI 实现叫做 dockershim</p>
+</blockquote>
+<p>回到容器启动阶段，kublet 首先会计算 pod 规格和沙盒（sandbox）的变更，将可能影响本次创建的沙盒和容器强制停止，然后为 pod <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/kuberuntime/kuberuntime_manager.go#L741">创建新的沙盒</a>（sandbox）。</p>
+<p>沙盒中<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/dockershim/docker_sandbox.go#L108">首先创建</a>的是 <code>pause</code> 容器，这里的 <a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/dockershim/docker_sandbox.go#L91">defaultSandboxImage</a> 其实就是官方提供的 <code>k8s.gcr.io/pause</code> 镜像。<code>pause</code> 容器是 Pod 中所有其他容器的基础容器，它会通过创建 Namespace 的方式（包括 Network Namespace、IPC Namespace、PID Namespace）将 Pod 级别的资源提供给用户容器，然后用户容器加入这些 Namespace 来共享 Pod 级别资源。</p>
+<h3 id="cni-与容器网络">CNI 与容器网络</h3>
+<p><code>pause</code> 容器启动成功后，容器运行时需要为沙盒<a href="https://github.com/kubernetes/kubernetes/blob/release-1.18/pkg/kubelet/dockershim/docker_sandbox.go#L173-L183">设置网络</a>。在 kubernetes 中，所有的 pod 网络都是通过一个 CNI 插件来设置的。这个插件会完成分配 pod ip、在沙盒内设置路由、配置网络接口等工作。和 CRI 一样，CNI 也是一层单独的抽象，它允许不同的组织为容器提供不同的网络实现（Flannel、Cailco、Weave 等）。</p>
+<p>通过将 CNI 配置文件（默认在 <code>/etc/cni/net.d</code> 目录下）中的数据传输到相关的 CNI 二进制文件（默认在 <code>/opt/cni/bin</code> 路径下）中，CNI 插件就可以为 <code>pause</code> 容器的 Network Namespace 配置符合预期的网络栈，然后 pod 中的其他容器加入 Namespace 来使用 <code>pause</code> 容器的网络。</p>
+<p>调用 CNI 插件的参数分为两部分（容器运行时暂定为 dockershim）。</p>
+<p>第一部分，是由 dockershim 设置的<a href="https://github.com/containernetworking/cni/blob/spec-v0.4.0/SPEC.md#network-configuration">一组 CNI 环境变量</a>。</p>
+<p>其中最重要的环境变量是：<code>CNI_COMMAND</code>。它的取值只有两种：ADD 和 DEL。而这个 ADD 和 DEL 操作，就是 CNI 插件唯一需要实现的两个方法。ADD 操作就是把容器添加到 CNI 网络中； DEL 操作则是把容器从 CNI 网络里移除掉。对于网桥类型的 CNI 插件来说，这两个操作就意味着把容器以 Veth Pair 的方式“插”到 CNI 网桥上，或者从网桥上“拔”掉。</p>
+<p>第二部分，则是 dockershim 从 CNI 配置文件里加载到的默认插件配置信息。</p>
+<p>这个配置信息在 CNI 中被叫作 Network Configuration，它的完整定义可以参考<a href="https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration">这个文档</a>。dockershim 会把 Network Configuration 以 JSON 数据的格式，通过标准输入（stdin）的方式传递给 CNI 插件。</p>
+<p>下面我以 Flannel CNI 插件为例，说明一下网络设置的具体流程：</p>
+<ol>
+<li>Flannel CNI 插件调用 CNI bridge 插件（路径：<code>/opt/cni/bin/bridge</code>），将上面两部分的参数传入 CNI bridge 插件。</li>
+<li>CNI bridge 插件检查宿主机上是否存在 CNI 网桥。如果没有则创建一个。</li>
+<li>CNI bridge 插件通过 <code>pause</code> 容器的 Network Namespace 文件进入到这个命名空间内，然后创建一对 Veth Pair 设备。</li>
+<li>CNI bridge 插件将 Veth Pair 设备的一端设置到宿主机里（暂命名为 veth-host），而另一端就是容器里面的 eth0。</li>
+<li>CNI bridge 插件将宿主机端的 veth-host 设备连接到 CNI 网桥上</li>
+<li>CNI bridge 插件调用 CNI ipam 插件，从 ipam.subnet 字段规定的网段里为容器分配一个可用的 IP 地址。然后将这个 IP 地址添加到容器的 eth0 网卡上，同时为容器设置默认路由。</li>
+<li>CNI bridge 插件为 CNI 网桥添加 IP 地址。</li>
+</ol>
+<p><img src="/media/%E5%AE%B9%E5%99%A8@2x%20-2-.png" alt="容器@2x -2-"></p>
+<p>执行完上述操作后，CNI 插件会把容器的 IP 地址等信息返回给 dockershim，然后被 kubelet 添加到 Pod 的 Status 字段。</p>
+<h3 id="容器启动">容器启动</h3>
+<p>所有网络都配置完成后，就可以<a href="https://github.com/kubernetes/kubernetes/blob/0f3e6609388defe7d0149216cb0409531f8d33b3/pkg/kubelet/kuberuntime/kuberuntime_manager.go#L810">启动业务容器</a>了。kubelet 会先启动 PodSpec 中定义的初始化容器（init container），然后再启动其他常规容器。<code>startContainer</code> 简化后的代码如下所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">kubeGenericRuntimeManager</span><span class="p">)</span> <span class="nf">startContainer</span><span class="p">(</span><span class="nx">podSandboxID</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">podSandboxConfig</span> <span class="o">*</span><span class="nx">runtimeapi</span><span class="p">.</span><span class="nx">PodSandboxConfig</span><span class="p">,</span> <span class="nx">spec</span> <span class="o">*</span><span class="nx">startSpec</span><span class="p">,</span> <span class="nx">pod</span> <span class="o">*</span><span class="nx">v1</span><span class="p">.</span><span class="nx">Pod</span><span class="p">,</span> <span class="nx">podStatus</span> <span class="o">*</span><span class="nx">kubecontainer</span><span class="p">.</span><span class="nx">PodStatus</span><span class="p">,</span> <span class="nx">pullSecrets</span> <span class="p">[]</span><span class="nx">v1</span><span class="p">.</span><span class="nx">Secret</span><span class="p">,</span> <span class="nx">podIP</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">podIPs</span> <span class="p">[]</span><span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="kt">string</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">container</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nx">container</span>
+
+	<span class="c1">// Step 1: pull the image.
+</span><span class="c1"></span>	<span class="nx">imageRef</span><span class="p">,</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">imagePuller</span><span class="p">.</span><span class="nf">EnsureImageExists</span><span class="p">(</span><span class="nx">pod</span><span class="p">,</span> <span class="nx">container</span><span class="p">,</span> <span class="nx">pullSecrets</span><span class="p">,</span> <span class="nx">podSandboxConfig</span><span class="p">)</span>
+	<span class="c1">// Step 2: create the container.
+</span><span class="c1"></span>	<span class="nx">containerID</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">runtimeService</span><span class="p">.</span><span class="nf">CreateContainer</span><span class="p">(</span><span class="nx">podSandboxID</span><span class="p">,</span> <span class="nx">containerConfig</span><span class="p">,</span> <span class="nx">podSandboxConfig</span><span class="p">)</span>
+	<span class="nx">err</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">internalLifecycle</span><span class="p">.</span><span class="nf">PreStartContainer</span><span class="p">(</span><span class="nx">pod</span><span class="p">,</span> <span class="nx">container</span><span class="p">,</span> <span class="nx">containerID</span><span class="p">)</span>
+	<span class="c1">// Step 3: start the container.
+</span><span class="c1"></span>	<span class="nx">err</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">runtimeService</span><span class="p">.</span><span class="nf">StartContainer</span><span class="p">(</span><span class="nx">containerID</span><span class="p">)</span>
+	<span class="c1">// Step 4: execute the post start hook.
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">container</span><span class="p">.</span><span class="nx">Lifecycle</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="o">&amp;&amp;</span> <span class="nx">container</span><span class="p">.</span><span class="nx">Lifecycle</span><span class="p">.</span><span class="nx">PostStart</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">kubeContainerID</span> <span class="o">:=</span> <span class="nx">kubecontainer</span><span class="p">.</span><span class="nx">ContainerID</span><span class="p">{</span>
+			<span class="nx">Type</span><span class="p">:</span> <span class="nx">m</span><span class="p">.</span><span class="nx">runtimeName</span><span class="p">,</span>
+			<span class="nx">ID</span><span class="p">:</span>   <span class="nx">containerID</span><span class="p">,</span>
+		<span class="p">}</span>
+		<span class="nx">msg</span><span class="p">,</span> <span class="nx">handlerErr</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">runner</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="nx">kubeContainerID</span><span class="p">,</span> <span class="nx">pod</span><span class="p">,</span> <span class="nx">container</span><span class="p">,</span> <span class="nx">container</span><span class="p">.</span><span class="nx">Lifecycle</span><span class="p">.</span><span class="nx">PostStart</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>通过镜像拉取器获得当前容器中使用镜像的引用。如果是私有仓库的镜像，会使用 PodSpec 中指定的 Secret 来拉取该镜像；</li>
+<li>调用 runtimeService 通过 CRI 接口创建容器。kubelet 向 PodSpec 中填充了一个 <code>containerConfig</code> 数据结构（里面定义了命令、镜像、标签、volume、环境变量等），这些信息会被容器运行时反序列化填充到自己的配置信息中；</li>
+<li>调用内部的生命周期方法 <code>PreStartContainer</code> 为当前的容器设置分配的 CPU 等资源；</li>
+<li>调用 runtimeService 启动容器；</li>
+<li>如果当前的容器配置了 <code>PostStart</code> 钩子（Hook），在启动之后就会运行这些 Hook；</li>
+</ol>
+<p>至此，<code>kubectl apply</code> 命令发起的创建流程全部完成。如果顺利的话，我们的集群上会存在 1 个 Deployment、1 个 ReplicaSet 和 2 个 Pod。</p>
+<p><img src="/media/16424193158129.jpg" alt=""></p>
+<h2 id="总结">总结</h2>
+<p>在上面的文章中我们完整的分析了 Pod 创建的全流程，一直从前台的 kubectl 梳理到了背后的容器运行时以及容器网络插件。我们发现一个简单的 Pod 创建，kubernetes 集群在背后其实做了很多努力。所以哪有什么岁月静好，只不过是有人在为你负重前行罢了。</p>
+<p>在整个分析过程中，我们也更好的了解了整个 kubernetes 集群中各个组件之间是如何协作运行的，其中也涉及到了对各组件工作原理的解析。如果之后在工作中遇到这方面的问题排查，我们也能够做到有迹可循。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">MidoriFizz</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        2022-01-09
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B/">自顶向下</a>
+          <a href="/tags/%E5%AE%B9%E5%99%A8/">容器</a>
+          <a href="/tags/k8s/">K8S</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/top-down-grpc-call/">
+            <span class="next-text nav-default">自顶向下-gRPC调用</span>
+            <span class="next-text nav-mobile">Next</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="gitalk-container"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+        id: '2022-01-09 15:40:22 \u002b0800 CST',
+        title: '自顶向下-Pod创建',
+        clientID: '857106e549022fc115bb',
+        clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
+        repo: 'moontalk',
+        owner: 'MidoriFizz',
+        admin: ['MidoriFizz'],
+        body: decodeURI(location.href)
+      });
+      gitalk.render('gitalk-container');
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/gitalk/gitalk">comments powered by gitalk.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://github.com/midorifizz" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    
+    
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2020 - 
+    2022
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">MidoriFizz</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.2517c0eb67172a0bae917de4af59b10ca2531411a009d4c0b82f5685259e5771.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

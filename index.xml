@@ -6,7 +6,16 @@
     <description>Recent content on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 28 Dec 2021 21:42:38 +0800</lastBuildDate><atom:link href="https://blog.moontalk.top/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 09 Jan 2022 15:40:22 +0800</lastBuildDate><atom:link href="https://blog.moontalk.top/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>自顶向下-Pod创建</title>
+      <link>https://blog.moontalk.top/post/top-down-pod-create/</link>
+      <pubDate>Sun, 09 Jan 2022 15:40:22 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/top-down-pod-create/</guid>
+      <description>当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过</description>
+    </item>
+    
     <item>
       <title>自顶向下-gRPC调用</title>
       <link>https://blog.moontalk.top/post/top-down-grpc-call/</link>

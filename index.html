@@ -112,6 +112,27 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/top-down-pod-create/">自顶向下-Pod创建</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-01-09 </span>
+      <div class="post-category">
+          <a href="/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/"> 云原生 </a>
+          </div>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      当我们在 kubernetes 集群中部署 nginx 服务时，可能会使用 kubectl apply 命令来应用一份声明式的 YAML 文件： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 apiVersion:apps/v1kind:Deploymentmetadata:name:nginx-deploymentspec:selector:matchLabels:app:nginxreplicas:2# tells deployment to run 2 pods matching the templatetemplate:metadata:labels:app:nginxspec:containers:- name:nginximage:nginx:1.14.2ports:- containerPort:80 经过
+    </div>
+    <div class="read-more">
+      <a href="/post/top-down-pod-create/" class="read-more-link">Read more...</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/top-down-grpc-call/">自顶向下-gRPC调用</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2021-12-28 </span>
@@ -190,27 +211,6 @@
     </div>
     <div class="read-more">
       <a href="/post/tornado-code-analysis-3/" class="read-more-link">Read more...</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/tornado-code-analysis-2/">Tornado源码分析(2) - IOLoop</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-07-27 </span>
-      <div class="post-category">
-          <a href="/categories/python/"> Python </a>
-          </div>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      注：本文所分析 tornado 源码版本为 4.5.3 IOLoop 是对IO多路复用的封装，它实现了一个单例，将这个单例保存在 IOLoop._instance 中。 IOLoop 实现了 Reactor 模型，将所有要处理的IO事件注册到一
-    </div>
-    <div class="read-more">
-      <a href="/post/tornado-code-analysis-2/" class="read-more-link">Read more...</a>
     </div>
   </div>
 </article>
