@@ -49,7 +49,7 @@
 <meta itemprop="name" content="为什么需要Pod">
 <meta itemprop="description" content="Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高"><meta itemprop="datePublished" content="2021-09-07T19:26:25+08:00" />
 <meta itemprop="dateModified" content="2021-09-07T19:26:25+08:00" />
-<meta itemprop="wordCount" content="3689">
+<meta itemprop="wordCount" content="3685">
 <meta itemprop="keywords" content="容器,Docker,K8S," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="为什么需要Pod"/>
 <meta name="twitter:description" content="Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？ 这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高"/>
@@ -139,7 +139,7 @@
     <div class="post-content">
       <p>Kubernetes 为什么需要创造一个“Pod容器组”的概念，而不是直接使用容器？</p>
 <p>这个问题想必很多初次接触 Kubernetes 的同学都会存在，我也不例外，当时觉得 Kubernetes 有点故意抬高学习门槛的味道。但是当我了解了容器和 Pod 背后的设计原理之后，这个问题便不复存在了。</p>
-<p>首先我们需要明确一个知识点，那就是**“容器的本质是进程”**。我们在使用 Docker 的时候，实际上并没有一个真正的“Docker 容器”运行在宿主机里面，只不过是在创建进程时，Docker 为它们加上了各种各样的 Namespace 参数。比如进程觉得自己是各自 PID Namespace 中的第 1 号进程，只能看到各自 Mount Namespace 中挂载的目录和文件，只能访问到各自 Network Namespace 里的网络设备，这些边界的设置就仿佛让进程运行在一个个“容器”里面，与外界隔绝。</p>
+<p>首先我们需要明确一个知识点，那就是 <strong>“容器的本质是进程”</strong> 。我们在使用 Docker 的时候，实际上并没有一个真正的“Docker 容器”运行在宿主机里面，只不过是在创建进程时，Docker 为它们加上了各种各样的 Namespace 参数。比如进程觉得自己是各自 PID Namespace 中的第 1 号进程，只能看到各自 Mount Namespace 中挂载的目录和文件，只能访问到各自 Network Namespace 里的网络设备，这些边界的设置就仿佛让进程运行在一个个“容器”里面，与外界隔绝。</p>
 <p>既然“容器的本质是进程”，那么我们可以问自己一个问题：“在实际的操作系统中，进程是单独运行的吗？”。其实并不是，<strong>在操作系统中，进程是以进程组（这里的进程组对应的是 Linux 操作系统下的线程组）的方式有原则的组合在一起</strong>。进程组是一个或多个进程的集合，这些进程之间可以共享文件、信号、数据内存、甚至部分代码，从而紧密协作共同完成一个程序的职责。每个进程都有父进程，而所有的进程以 init 进程为根，形成一个树状结构。</p>
 <p><img src="/media/16318026636098.jpg" alt=""></p>
 <p>那为啥要有进程组呢？其实，提供进程组就是为了方便操作系统对进程进行管理。假设完成一个任务需要同时并发100个进程，当用户处于某种原因要终止这个任务时，如果没有进程组，就需要手动的一个个去杀死这100个进程，并且要严格按照进程间父子兄弟关系顺序，否则会扰乱进程树。有了进程组，就可以将这100个进程设置为一个进程组，它们共用1个组号（PGRP），并且会选取一个进程作为组长（通常是“辈分”最高的那个，该进程的 ID 一般也就是进程组的 ID）。现在就可以通过杀死“进程组长”的方式来关闭这100个进程，并且是严格有序的。</p>

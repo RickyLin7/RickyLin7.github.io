@@ -6,7 +6,16 @@
     <description>Recent content in 云原生 on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 09 Jan 2022 15:40:22 +0800</lastBuildDate><atom:link href="https://blog.moontalk.top/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 28 Feb 2022 09:33:52 +0800</lastBuildDate><atom:link href="https://blog.moontalk.top/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>谈谈 Kubernetes Operator</title>
+      <link>https://blog.moontalk.top/post/crd-and-operator/</link>
+      <pubDate>Mon, 28 Feb 2022 09:33:52 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/crd-and-operator/</guid>
+      <description>无状态容易，有状态很难 我们都知道，在 kubernetes 环境中部署和管理一个“无状态应用”是非常容易的，比如 web应用、移动后端和 API服务等。只需要使用像 Deployment</description>
+    </item>
+    
     <item>
       <title>自顶向下-Pod创建</title>
       <link>https://blog.moontalk.top/post/top-down-pod-create/</link>
