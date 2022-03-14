@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Kubesphere 部署踩坑记 - moontalk</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="MidoriFizz" /><meta name="description" content="出于业务需要，最近在调研 Kubesphere。但是在部署过程中遇到了一些问题，特地记录一篇，以作备忘。 前情提要 原本手头上有一个三节点的 k8s 测试" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.91.2 with theme even" />
+
+
+<link rel="canonical" href="https://blog.moontalk.top/post/deploy-kubesphere/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.698b45f22722579088fe87bfd0e2dd1ca078c05594c8d33ce7b82b5733f75032.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="Kubesphere 部署踩坑记" />
+<meta property="og:description" content="出于业务需要，最近在调研 Kubesphere。但是在部署过程中遇到了一些问题，特地记录一篇，以作备忘。 前情提要 原本手头上有一个三节点的 k8s 测试" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.moontalk.top/post/deploy-kubesphere/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-03-14T11:35:48+08:00" />
+<meta property="article:modified_time" content="2022-03-14T11:35:48+08:00" />
+
+<meta itemprop="name" content="Kubesphere 部署踩坑记">
+<meta itemprop="description" content="出于业务需要，最近在调研 Kubesphere。但是在部署过程中遇到了一些问题，特地记录一篇，以作备忘。 前情提要 原本手头上有一个三节点的 k8s 测试"><meta itemprop="datePublished" content="2022-03-14T11:35:48+08:00" />
+<meta itemprop="dateModified" content="2022-03-14T11:35:48+08:00" />
+<meta itemprop="wordCount" content="2738">
+<meta itemprop="keywords" content="容器,K8S," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubesphere 部署踩坑记"/>
+<meta name="twitter:description" content="出于业务需要，最近在调研 Kubesphere。但是在部署过程中遇到了一些问题，特地记录一篇，以作备忘。 前情提要 原本手头上有一个三节点的 k8s 测试"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">MoonTalk</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">MoonTalk</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Kubesphere 部署踩坑记</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-03-14 </span>
+        <div class="post-category">
+            <a href="/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/"> 云原生 </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> times read </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">Contents</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#前情提要">前情提要</a></li>
+    <li><a href="#集群降级">集群降级</a></li>
+    <li><a href="#部署-calico-插件">部署 calico 插件</a></li>
+    <li><a href="#部署-storageclass">部署 StorageClass</a>
+      <ul>
+        <li><a href="#nfs-服务器搭建">nfs 服务器搭建</a></li>
+        <li><a href="#nfs-客户端搭建">nfs 客户端搭建</a></li>
+        <li><a href="#基于-nfs-创建-storageclass">基于 nfs 创建 storageclass</a></li>
+      </ul>
+    </li>
+    <li><a href="#部署-kubesphere">部署 Kubesphere</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>出于业务需要，最近在调研 <a href="https://kubesphere.io/">Kubesphere</a>。但是在部署过程中遇到了一些问题，特地记录一篇，以作备忘。</p>
+<h2 id="前情提要">前情提要</h2>
+<p>原本手头上有一个三节点的 k8s 测试集群（操作系统版本：CentOS 7；集群版本：1.23.3）。于是就直接按照 Kubesphere 的<a href="https://kubesphere.io/zh/docs/quick-start/minimal-kubesphere-on-k8s/">官方文档</a>部署了一遍。部署完成后所有 Pod 正常运行，然而却无法登录，报错信息为&quot;<strong>getaddrinfo EAI_AGAIN ks-apiserver</strong>&quot;。如下图所示：</p>
+<p><img src="/media/16472380762258.jpg" alt=""></p>
+<p>按照这个<a href="https://kubesphere.com.cn/forum/d/4288-kubesphere-v31">链接</a>里的方法进行排查，发现是 dns 解析超时。但是我确认各个集群节点 <code>/etc/resolv.conf</code> 文件中的域名服务器没问题。将信将疑的根据链接中的回答将 coredns 配置文件中的 <code>forward . /etc/resolv.conf</code> 注释并重启。然并卵，dns 还是解析超时。后来在一个 issue 中（链接翻不到了）查到说可能是 k8s 集群网络插件的原因，答者重新换了一个网络插件后就正常了。同时我想起 Kubesphere 的部署文档中有声明 k8s 集群版本的要求。</p>
+<p><img src="/media/16472393448025.jpg" alt=""></p>
+<p>为避免后面再出现其他问题，我打算把集群直接降级为 1.21.10，然后用 calico 作为集群网络插件（原本是 weave）重新部署。</p>
+<h2 id="集群降级">集群降级</h2>
+<p>因为原本的集群是用 kubeadm 部署的，所以只需要铲掉集群，然后重新安装 1.21.10 版本的 kubeadm，再使用 kubeadm 部署较低版本的 k8s 集群即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 还原集群对主机所做的更改（执行完成后记得按提示清理网络和集群配置）</span>
+kubeadm reset
+
+<span class="c1"># 卸载高版本组件</span>
+yum -y remove kubeadm kubectl kubelet
+
+<span class="c1"># 重新安装低版本组件</span>
+yum -y install kubeadm-1.21.10 kubectl-1.21.10 kubelet-1.21.10
+</code></pre></td></tr></table>
+</div>
+</div><p>我这里使用配置文件的方式部署集群，创建一个 <code>kubeadm.yaml</code> 文件，内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">kubeadm.k8s.io/v1beta2</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">InitConfiguration</span><span class="w">
+</span><span class="w"></span><span class="nt">nodeRegistration</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">kubeletExtraArgs</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">cgroup-driver</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;systemd&#34;</span><span class="w">
+</span><span class="w">  </span><span class="nt">criSocket</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;unix:///run/containerd/containerd.sock&#34;</span><span class="w"> </span><span class="c"># 我使用了 containerd 作为容器运行时，如果是 docker 请删除该行。</span><span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">kubeadm.k8s.io/v1beta2</span><span class="w">
+</span><span class="w"></span><span class="nt">imageRepository</span><span class="p">:</span><span class="w"> </span><span class="l">registry.cn-hangzhou.aliyuncs.com/google_containers</span><span class="w"> </span><span class="c"># 使用阿里镜像源加速</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterConfiguration</span><span class="w">
+</span><span class="w"></span><span class="nt">kubernetesVersion</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;v1.21.10&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">clusterName</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;example-cluster&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">controllerManager</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">extraArgs</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">horizontal-pod-autoscaler-use-rest-clients</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;true&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">horizontal-pod-autoscaler-sync-period</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;10s&#34;</span><span class="w">
+</span><span class="w">    </span><span class="nt">node-monitor-grace-period</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;10s&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">apiServer</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">extraArgs</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">runtime-config</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;api/all=true&#34;</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>然后执行 <code>kubeadm init --config kubeadm.yaml</code> 初始化集群，执行完成后输出如下所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p <span class="nv">$HOME</span>/.kube
+  sudo cp -i /etc/kubernetes/admin.conf <span class="nv">$HOME</span>/.kube/config
+  sudo chown <span class="k">$(</span>id -u<span class="k">)</span>:<span class="k">$(</span>id -g<span class="k">)</span> <span class="nv">$HOME</span>/.kube/config
+
+Alternatively, <span class="k">if</span> you are the root user, you can run:
+
+  <span class="nb">export</span> <span class="nv">KUBECONFIG</span><span class="o">=</span>/etc/kubernetes/admin.conf
+
+<span class="c1"># 这里有引导网络插件的部署</span>
+You should now deploy a pod network to the cluster.
+Run <span class="s2">&#34;kubectl apply -f [podnetwork].yaml&#34;</span> with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 10.1.100.53:6443 --token xxx <span class="se">\
+</span><span class="se"></span>	--discovery-token-ca-cert-hash xxx
+</code></pre></td></tr></table>
+</div>
+</div><p>记得按照输出提示将集群的安全配置文件保存到当前用户的 <code>.kube</code> 目录下。如果后续添加节点时忘记了 join 命令，可以直接执行以下命令查看：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">kubeadm token create --print-join-command
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="部署-calico-插件">部署 calico 插件</h2>
+<p>根据 kubeadm 的输出引导，开始部署 <a href="https://docs.projectcalico.org/v3.11/getting-started/kubernetes/installation/calico">calico v3.11</a>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 下载 manifest 文件</span>
+curl https://docs.projectcalico.org/v3.11/manifests/calico.yaml -O
+
+<span class="c1"># 如果你要修改 pod CIDR，执行以下命令（我这里直接使用默认的 192.168.0.0/16，所以省略这步）</span>
+<span class="nv">POD_CIDR</span><span class="o">=</span><span class="s2">&#34;&lt;your-pod-cidr&gt;&#34;</span> <span class="se">\
+</span><span class="se"></span>sed -i -e <span class="s2">&#34;s?192.168.0.0/16?</span><span class="nv">$POD_CIDR</span><span class="s2">?g&#34;</span> calico.yaml
+
+<span class="c1"># 提交 manifest 至 k8s 集群</span>
+kubectl apply -f calico.yaml
+</code></pre></td></tr></table>
+</div>
+</div><p>部署完成后，发现 calico-node pod 一直处于 <code>not Ready</code> 状态，使用 <code>kubectl describe pod</code> 命令查看事件信息后，发现报错 &ldquo;<strong>BIRD is not ready: BGP not established</strong>&quot;。这个报错是 Readiness probe 探测的网卡设备错误，可以通过以下命令指定探测网卡。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 我这里的网卡是ens开头的，如果你的网卡是其他开头记得修改</span>
+kubectl <span class="nb">set</span> env daemonset/calico-node -n kube-system <span class="nv">IP_AUTODETECTION_METHOD</span><span class="o">=</span><span class="nv">interface</span><span class="o">=</span>ens<span class="se">\*</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>稍等一会，calico-node pod 重建后就正常了。</p>
+<h2 id="部署-storageclass">部署 StorageClass</h2>
+<p>kubesphere 前置要求集群内需要有默认的存储类，否则部署日志中会报错&rdquo;<strong>Default StorageClass was not found !</strong>&quot;。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">TASK [preinstall : KubeSphere | Stopping if default StorageClass was not found] ***
+fatal: [localhost]: FAILED! =&gt; {
+&#34;assertion&#34;: &#34;&#34;(default)&#34; in default_storage_class_check.stdout&#34;,
+&#34;changed&#34;: false,
+&#34;evaluated_to&#34;: false,
+&#34;msg&#34;: &#34;Default StorageClass was not found !&#34;
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>我这里使用 nfs 作为默认的存储类，部署步骤如下。</p>
+<h3 id="nfs-服务器搭建">nfs 服务器搭建</h3>
+<p>在 k8s 集群中选择任意一个 node 节点做 nfs 服务端。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 安装nfs相关服务软件包</span>
+yum install -y nfs-utils rpcbind
+
+<span class="c1"># 创建共享存储文件夹</span>
+mkdir /nfs
+
+<span class="c1"># 配置nfs</span>
+vi /etc/exports
+<span class="c1"># 内容格式为：nfs共享目录 nfs服务端地址(param1, param2,...)</span>
+/nfs 10.1.100.54/24<span class="o">(</span>rw,async,no_root_squash<span class="o">)</span>
+
+<span class="c1"># 启动rpc和nfs服务</span>
+systemctl start rpcbind
+systemctl <span class="nb">enable</span> rpcbind
+systemctl <span class="nb">enable</span> nfs <span class="o">&amp;&amp;</span> systemctl restart nfs
+</code></pre></td></tr></table>
+</div>
+</div><p>最后检查下服务状态和可用的 nfs 地址</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">systemctl status rpcbind
+systemctl status nfs
+showmount -e localhost
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="/media/16472455673968.jpg" alt=""></p>
+<h3 id="nfs-客户端搭建">nfs 客户端搭建</h3>
+<p>以下步骤在使用 nfs 共享目录的节点上都需要配置一遍。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 安装nfs相关服务软件包</span>
+yum install -y nfs-utils rpcbind
+
+<span class="c1"># 创建挂载的文件夹</span>
+mkdir -p /nfsmount
+
+<span class="c1"># 挂载nfs共享目录</span>
+mount -t nfs 10.1.100.54:/nfs /nfsmount
+</code></pre></td></tr></table>
+</div>
+</div><p>挂载完成后，可以测试一下共享目录是否挂载成功。测试方法：在客户端机器的 <code>/nfsmount</code> 目录下新建一个文件，然后登录 nfs 服务端主机，查看 <code>/nfs</code> 共享目录下是否存在该文件，存在则说明挂载成功。</p>
+<h3 id="基于-nfs-创建-storageclass">基于 nfs 创建 storageclass</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># clone nfs客户端项目</span>
+git clone https://github.com/kubernetes-retired/external-storage.git
+
+<span class="c1"># 进入部署目录</span>
+<span class="nb">cd</span> external-storage/nfs-client/deploy
+</code></pre></td></tr></table>
+</div>
+</div><p>创建 seviceaccount</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">$ kubectl apply -f rbac.yaml
+$ kubectl get sa
+NAME                     SECRETS   AGE
+default                  <span class="m">1</span>         27h
+nfs-client-provisioner   <span class="m">1</span>         5h36m
+</code></pre></td></tr></table>
+</div>
+</div><p>修改当前目录下的 <code>deployment.yaml</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-provisioner</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-provisioner</span><span class="w">
+</span><span class="w">  </span><span class="c"># replace with namespace where provisioner is deployed</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">default</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Recreate</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-provisioner</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-provisioner</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">serviceAccountName</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-provisioner</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-provisioner</span><span class="w">
+</span><span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">quay.io/external_storage/nfs-client-provisioner:latest</span><span class="w">
+</span><span class="w">          </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-root</span><span class="w">
+</span><span class="w">              </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/persistentvolumes</span><span class="w">
+</span><span class="w">          </span><span class="nt">env</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">PROVISIONER_NAME</span><span class="w">
+</span><span class="w">              </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">fuseim.pri/ifs</span><span class="w">
+</span><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">NFS_SERVER</span><span class="w">
+</span><span class="w">              </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="m">10.1.100.54</span><span class="w">  </span><span class="c"># nfs服务器地址</span><span class="w">
+</span><span class="w">            </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">NFS_PATH </span><span class="w"> </span><span class="c"># nfs共享目录</span><span class="w">
+</span><span class="w">              </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l">/nfs</span><span class="w">
+</span><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">nfs-client-root</span><span class="w">
+</span><span class="w">          </span><span class="nt">nfs</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="m">10.1.100.54</span><span class="w">  </span><span class="c"># nfs服务器地址</span><span class="w">
+</span><span class="w">            </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/nfs </span><span class="w"> </span><span class="c"># nfs共享目录</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>创建 deployment</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">$ kubectl apply -f deployment.yaml
+$ kubectl get deploy
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+nfs-client-provisioner   1/1     <span class="m">1</span>            <span class="m">1</span>           5h43m
+</code></pre></td></tr></table>
+</div>
+</div><p>创建 storageclass</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">$ kubectl apply -f class.yaml
+$ kubectl get sc
+NAME                  PROVISIONER         RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+managed-nfs-storage   fuseim.pri/ifs      Delete          Immediate           <span class="nb">false</span>                  37s
+</code></pre></td></tr></table>
+</div>
+</div><p>测试 pvc</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">$ kubectl apply -f test-claim.yaml
+$ kubectl get pvc
+NAME         STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS          AGE
+test-claim   Bound    pvc-65d3e4dc-89ce-4e7e-b8f2-045bcf6766af   1Mi        RWX            managed-nfs-storage   5h47m
+</code></pre></td></tr></table>
+</div>
+</div><p>这里在创建 pvc 的时候遇到一个问题，test-claim 一直处于 Pending 状态，无法进入 Bound 状态。执行命令 <code>kubectl logs nfs-client-provisioner</code> 查看 pod 日志后发现报错：&quot;<strong>unexpected error getting claim reference: selfLink was empty, can&rsquo;t make reference</strong>&quot;，在 github <a href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/issues/25">issue</a> 中找到了解决方法，如下所示。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">vi /etc/kubernetes/manifests/kube-apiserver.yaml
+
+<span class="c1"># 在 apiserver 的启动命令中添加启动参数</span>
+...
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    ...
+    - --feature-gates<span class="o">=</span><span class="nv">RemoveSelfLink</span><span class="o">=</span><span class="nb">false</span>  <span class="c1"># 添加此行</span>
+...
+</code></pre></td></tr></table>
+</div>
+</div><p>应用变更（执行两遍）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f /etc/kubernetes/manifests/kube-apiserver.yaml
+kubectl apply -f /etc/kubernetes/manifests/kube-apiserver.yaml
+</code></pre></td></tr></table>
+</div>
+</div><p>等待 kube-apiserver pod 处于 Ready 状态后，test-claim 就变成正常 Bound 状态了。</p>
+<p>最后将这个 managed-nfs-storage 设置为集群默认的 storageclass。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">kubectl patch storageclass managed-nfs-storage -p <span class="s1">&#39;{&#34;metadata&#34;: {&#34;annotations&#34;:{&#34;storageclass.kubernetes.io/is-default-class&#34;:&#34;true&#34;}}}&#39;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>执行 <code>kubectl get sc</code> 查看，发现 managed-nfs-storage 后多了一个(default)，说明设置成功。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get sc
+NAME                            PROVISIONER      RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+managed-nfs-storage <span class="o">(</span>default<span class="o">)</span>   fuseim.pri/ifs   Delete          Immediate           <span class="nb">false</span>                  6h4m
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="部署-kubesphere">部署 Kubesphere</h2>
+<p>上面所有前置任务完成后，就可以部署 Kubesphere 了，直接根据<a href="https://kubesphere.io/zh/docs/quick-start/minimal-kubesphere-on-k8s/">官方部署文档</a>进行即可。</p>
+<p>执行以下命令开始安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.2.1/kubesphere-installer.yaml
+   
+kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.2.1/cluster-configuration.yaml
+</code></pre></td></tr></table>
+</div>
+</div><p>检查安装日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">kubectl logs -n kubesphere-system <span class="k">$(</span>kubectl get pod -n kubesphere-system -l <span class="nv">app</span><span class="o">=</span>ks-install -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.items[0].metadata.name}&#39;</span><span class="k">)</span> -f
+</code></pre></td></tr></table>
+</div>
+</div><p>安装日志最后会输出 kubesphere 的登录地址和账户信息：</p>
+<p><img src="/media/16472484586703.jpg" alt=""></p>
+<p>不过该信息输出会早一些，可能还存在其他 pod 处于创建过程中。所以等待所有 pod 都处于 Ready 状态后再访问即可。</p>
+<p><img src="/media/16472487976221.jpg" alt=""></p>
+<p>这次登录后一切正常，over。</p>
+<p><img src="/media/16472485988284.jpg" alt=""></p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">Author</span>
+    <span class="item-content">MidoriFizz</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">LastMod</span>
+    <span class="item-content">
+        2022-03-14
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/%E5%AE%B9%E5%99%A8/">容器</a>
+          <a href="/tags/k8s/">K8S</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/crd-and-operator/">
+            <span class="next-text nav-default">谈谈 Kubernetes Operator</span>
+            <span class="next-text nav-mobile">Next</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="gitalk-container"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+        id: '2022-03-14 11:35:48 \u002b0800 CST',
+        title: 'Kubesphere 部署踩坑记',
+        clientID: '857106e549022fc115bb',
+        clientSecret: '8ba8442406bd4acab9bc97c059f393723035540e',
+        repo: 'moontalk',
+        owner: 'MidoriFizz',
+        admin: ['MidoriFizz'],
+        body: decodeURI(location.href)
+      });
+      gitalk.render('gitalk-container');
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/gitalk/gitalk">comments powered by gitalk.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:rickylin7mail@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://github.com/midorifizz" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.moontalk.top/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    
+    
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2020 - 
+    2022
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">MidoriFizz</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.2517c0eb67172a0bae917de4af59b10ca2531411a009d4c0b82f5685259e5771.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

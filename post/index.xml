@@ -6,7 +6,16 @@
     <description>Recent content in Posts on moontalk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 28 Feb 2022 09:33:52 +0800</lastBuildDate><atom:link href="https://blog.moontalk.top/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 14 Mar 2022 11:35:48 +0800</lastBuildDate><atom:link href="https://blog.moontalk.top/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Kubesphere 部署踩坑记</title>
+      <link>https://blog.moontalk.top/post/deploy-kubesphere/</link>
+      <pubDate>Mon, 14 Mar 2022 11:35:48 +0800</pubDate>
+      
+      <guid>https://blog.moontalk.top/post/deploy-kubesphere/</guid>
+      <description>出于业务需要，最近在调研 Kubesphere。但是在部署过程中遇到了一些问题，特地记录一篇，以作备忘。 前情提要 原本手头上有一个三节点的 k8s 测试</description>
+    </item>
+    
     <item>
       <title>谈谈 Kubernetes Operator</title>
       <link>https://blog.moontalk.top/post/crd-and-operator/</link>
